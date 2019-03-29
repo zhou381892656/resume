@@ -1,0 +1,428 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <div class="layui-form">
+                <blockquote class="layui-elem-quote">
+                    任务配置：
+                </blockquote>
+
+                <div class="layui-form-item">
+                    <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                        <a href="/update_website_page/{{ web_id }}" style="color:deepskyblue"><span style="color:deepskyblue">站点信息设置</span></a>
+                        <a href="/zzl-task-config/{{ web_id }}"><span style="color:deepskyblue">文章发布规则设置</span></a>
+                        <a href="/cache_config_list/{{ yumin }}"><span style="color:deepskyblue">站点缓存规则设置</span></a>
+                        <a href="/check_cms_page/{{ web_id }}"><span style="color:deepskyblue">建站程序</span></a>
+                    </span>
+                </div>
+
+
+                <div class="layui-btn-group">
+                  <button id="layui-btn" class="layui-btn">新增发布规则</button>
+                </div>
+                <table class="layui-table">
+                  <colgroup>
+                    <col width="150">
+                    <col width="200">
+                    <col>
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>栏目</th>
+                      <th>解析IP</th>
+                      <th>文章来源</th>
+                      <th>发布数量</th>
+                      <th>间隔时间</th>
+                      <th>添加时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody">
+                    <tr>
+
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="layui-footer">
+        </div>
+    </div>
+    <input id="web_idvalue" type="hidden" value="{{web_id}}" />
+</body>
+{% include 'public/foot.html' %}
+<script>
+
+
+function formatDateTime(timeStamp) {
+    var date = new Date();
+    date.setTime(timeStamp * 1000);
+    var y = date.getFullYear();
+    var m = date.getMonth() + 1;
+    m = m < 10 ? ('0' + m) : m;
+    var d = date.getDate();
+    d = d < 10 ? ('0' + d) : d;
+    var h = date.getHours();
+    h = h < 10 ? ('0' + h) : h;
+    var minute = date.getMinutes();
+    var second = date.getSeconds();
+    minute = minute < 10 ? ('0' + minute) : minute;
+    second = second < 10 ? ('0' + second) : second;
+    return y + '-' + m + '-' + d+' '+h+':'+minute+':'+second;
+};
+
+
+function tip(name){
+    layer.open({
+      title: '提示',
+      content: name
+    });
+}
+    function get_lanmu(){
+        $.ajax({
+            type:'POST',
+            url:'/get_dede_column',
+            dataType:'json',
+            data:{id:{{ web_id }}},
+            success:function(data){
+                layer.msg(data.msg);
+                $.ajax({
+                    type:'POST',
+                    url:'/push_dede_column',
+                    dataType:'json',
+                    data:{id:{{ web_id }}},
+                    success:function(data){
+                        var str="";
+                        for (var key in data) {
+                            str += "<option value=\"" + data[key]['column_id'] + "\">" + data[key]['column_name'] + "</option>";
+                        }
+                        $("#lanmu_id").html(str);
+                    }
+                });
+            }
+        });
+    }
+
+
+
+    $(document).ready(function(){
+        var dataObj = {'web_id':$('#web_idvalue').val()};
+        var str = '';
+        $.ajax({
+            url:'/get_rule_list',
+            type:'POST',
+            data:dataObj,
+            success:function(data){
+                if(data.code == '1'){
+                    var data = data.data;
+                    for(var i = 0 ; i< data.length; i++){
+                        str += '<tr>'
+                        +'<td>'+data[i].column_name+'</td>'
+                        +'<td>'+data[i].analysis_ip+'</td>'
+                        +'<td>'+data[i].projects_name+'</td>'
+                        +'<td><a href="/dr_arcitle/'+data[i].pyspider_id+'">'+data[i].publish_nums+'</a></td>'
+                        +'<td>'+data[i].deadline+'</td>'
+                        +'<td>'+formatDateTime(data[i].interval)+'</td>'
+                        +'<td><button data-id="'+data[i].p_id+'" class="layui-btn del layui-btn-danger">删除</button></td>'
+                        +'</tr>'
+                    };
+                  $('#tbody').html(str);
+                }
+
+               $('.del').on('click',function(){
+                    var id = $(this).attr('data-id');
+                    var index = $(this).index();
+                    var m = layer.open({
+                          title: '提示',
+                          btn:['确定','取消'],
+                          yes:function(index, layero){
+                            var loading=layer.load(1, {shade: [0.8, '#393D49']});
+                            $.ajax({
+                                url:'/del_push_rule',
+                                type:'POST',
+                                data:{'id':id},
+                                success:function(data){
+                                    console.log(data);
+                                    if(data.msg == 'ok'){
+                                        // $('#tbody tr').eq(index).remove();
+                                        // layer.close(m);
+                                        // layer.close(loading);
+                                         window.location.reload();
+                                    }
+                                }
+                            })
+                          },
+                          content: '确定删除！'
+                        });
+                });
+            }
+        })
+    })
+
+
+
+    $('#layui-btn').on('click',function(){
+        var str = '<div id="formBox" style="padding-right:20px;"><div style="margin-top:20px;" class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">栏目ID</label>\n' +
+            '                    <div class="layui-input-inline">\n' +
+            '                        <select id="lanmu_id" class="lanmu_id" style="height:38px;width:200px;float:left;"></select>\n' +
+            '                    </div>\n' +
+            '                    <div class="layui-input-inline"><button class="layui-btn" onclick="get_lanmu();">获取栏目</button>\n' +
+            '                    </div>\n' +
+            '                </div>\n' +
+            '\n' +
+            '                <div class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">文章来源</label>\n' +
+            '                   <div class="layui-input-inline">\n' +
+            '                        <select id="laiyuan" class="laiyuan" style="height:38px;width:200px;float:left;">\n' +
+            '                        </select>\n' +
+            '                    </div>\n' +
+            '                    <div class="layui-input-inline">\n' +
+            '                        <label class="layui-form-label">其他方式</label>\n' +
+            '                        <input id="other" type="checkbox" style="width:38px;height:38px;" />\n' +
+            '                    </div>\n' +
+            '\n' +
+            '                </div>\n' +
+            '\n' +
+            '\n' +
+            '                    <div style="display:none;" class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">域名</label>\n' +
+            '                    <div class="layui-input-block">\n' +
+            '                        <input name="yumin" type="text" id="yumin" placeholder="" class="layui-input" value="{{yumin}}">\n' +
+            '                    </div>\n' +
+            '                </div>\n' +
+            '                    <div style="display:none;" class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">发布ID</label>\n' +
+            '                    <div class="layui-input-block">\n' +
+            '                        <input name="fabu" type="text" id="fabu_id" placeholder="发布ID" class="layui-input" value="{{web_id}}">\n' +
+            '                    </div>\n' +
+            '                </div>\n' +
+            '\n' +
+            '                <div id="fb" class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">发布数量</label>\n' +
+            '                    <div class="layui-input-block">\n' +
+            '                        <input type="number" id="publish_nums" placeholder="发布数量(单位:个)" class="layui-input" value="">\n' +
+            '                    </div>\n' +
+            '                </div>\n' +
+            '                <div class="layui-form-item">\n' +
+            '                    <label class="layui-form-label">间隔时间</label>\n' +
+            '                    <div class="layui-input-block">\n' +
+            '                        <input type="text" id="time" placeholder="间隔时间(单位:秒)" class="layui-input" value="">\n' +
+            '                    </div>\n' +
+            '                </div>';
+            // '               <div class="layui-form-item">\n' +
+            // '                   <label class="layui-form-label">解析IP</label>\n' +
+            // '                  <div class="layui-input-block">\n' +
+            // '                   <select class="jiexi" style="height:38px;width:200px;">\n' +
+            // '                 </select>\n' +
+            // '                   </div>\n' +
+            // '               </div>\n' +
+            // '                </div>';
+
+
+        layer.open({
+          title:'发布规则',
+          type:1,
+          area: ['600px', '400px'],
+          offset: 'auto',
+          btn:['保存','取消'],
+          yes:function(index, layero){
+                if($('#other').prop('checked')){
+                        saveLy()
+                    }else{
+                       saves();
+                    }
+          },
+          content: str
+        });
+
+        $.ajax({
+            type:'POST',
+            url:'/push_dede_column',
+            dataType:'json',
+            data:{id:{{ web_id }}},
+            success:function(data){
+                $(document).ready(function(){
+                    var str="";
+                      str = "<option value='0'>" + '随机发布' + "</option>";
+                    for (var key in data) {
+                        str += "<option value=\"" + data[key]['column_id'] + "\">" + data[key]['column_name'] + "</option>";
+                    }
+                    $("#lanmu_id").html(str);
+                })
+            }
+        });
+    $.ajax({
+        type:'POST',
+        url:'/get_artice',
+        success:function(data){
+            $(document).ready(function(){
+                var strs = '<option>请选择</option>';
+                for(var i = 0 ; i < data.length;i++){
+                    strs += '<option value="'+data[i].id+'">'+data[i].projects_name+'</option>'
+                }
+                $('.laiyuan').html(strs);
+            })
+
+        }
+    })
+
+   $.ajax({
+       type:'POST',
+       url:'/get_n_ip',
+       success:function(data){
+           console.log(data);
+           $(document).ready(function(){
+               var strs = '<option>请选择</option>';
+               for(var i = 0 ; i < data.length;i++){
+                   strs += '<option value="'+data[i].IDC_SSH_IP+'">'+data[i].IDC_SSH_IP+'</option>'
+               }
+               $('.jiexi').html(strs);
+           })
+       }
+   });
+
+    $('#other').on('click',function(){
+       var val = $(this).prop('checked');
+           if(val){
+            $('#laiyuan').attr('disabled',true);
+           }else{
+            $('#laiyuan').attr('disabled',false);
+           }
+    })
+});
+
+function saves(name){
+        var lanmu = $('#lanmu_id').val();
+        var fabu = $('#fabu_id').val();
+        var shuliang = $('#publish_nums').val();
+        var lanyuan = '';
+        if(name){
+          lanyuan = name;
+        }else{
+          lanyuan = $(".laiyuan option:selected").val();
+        }
+        var jiexi = $(".jiexi option:selected").val();
+        var yumin = $('#yumin').val();
+        var deadline = $('#time').val();
+        var sendData = {};
+        sendData['web_id'] = fabu;
+        sendData['url'] = yumin;
+        sendData['cat_id'] = lanmu;
+        sendData['py_id'] = lanyuan;
+        sendData['publish_nums'] = shuliang;
+        sendData['deadline'] = deadline;
+        sendData['jiexi'] = jiexi;
+
+        if (lanmu == '') {
+            tip('栏目ID不能为空');
+            return;
+        }
+        if(lanyuan == ''){
+            tip('文章来源不能为空');
+            return;
+        }
+        if (shuliang == '' || shuliang == 0) {
+            tip('发布数量不能为空');
+            return;
+        }
+        if(deadline == ''){
+            tip('间隔时间不能为空');
+            return;
+        }
+        if(isNaN(deadline)){
+            tip('间隔时间必须为数字');
+            return;
+        }
+
+       if (jiexi == '请选择') {
+           tip('请选择解析ip');
+           return;
+       }
+        var loading=layer.load(1, {shade: [0.8, '#393D49']});
+        $.ajax({
+            url:'/save_task_config',
+            type:'POST',
+            data:sendData,
+            success:function(data){
+                console.log(data);
+                if(data.msg == 'ok'){
+                  window.location.reload();
+                }
+
+            }
+        })
+}
+
+
+function saveLy(){
+            var strs = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+            var name = '';
+
+            if ($('#lanmu_id').val() == '') {
+                tip('栏目ID不能为空');
+                return;
+            }
+            if ($('#publish_nums').val() == '' || $('#publish_nums').val() == 0) {
+                tip('发布数量不能为空');
+                return;
+            }
+            if($('#time').val() == ''){
+                tip('间隔时间不能为空');
+                return;
+            }
+            if(isNaN($('#time').val())){
+                tip('间隔时间必须为数字');
+                return;
+            }
+
+           if ($(".jiexi option:selected").val() == '请选择') {
+               tip('请选择解析ip');
+               return;
+           }
+
+
+            for(var i = 0; i < 6;i++){
+              var n = Math.floor(Math.random()*strs.length);
+              var l = strs[n];
+               name += l;
+            }
+            $.ajax({
+                type:'POST',
+                url:'/add_item',
+                dataType:'json',
+                data:{item:name,type:'wechat',key:name},
+                success:function(data){
+                    if(data.msg=="ok"){
+                        $.ajax({
+                            type:'POST',
+                            url:'http://120.79.150.193:5000/debug/add_todo_project',//爬虫地址
+                            dataType:'json',
+                            data:{type:'wechat',key:name},
+                            success:function(data){
+                                if(data.http_status == '200'){
+                                     $.ajax({
+                                        type:'POST',
+                                        url:'/add_porject',
+                                        dataType:'json',
+                                        data:{projects_name:name,pyspider_id:data.id},
+                                        success:function(data){
+                                            saves(data.id);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }else if(data.msg=="have"){
+                        layer.msg("项目已存在");
+                        setTimeout("window.location.reload()",1000);
+                    }
+                }
+            });
+}
+
+
+</script>

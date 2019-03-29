@@ -1,0 +1,48 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加用户：
+            </blockquote>
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="user_name" class="layui-input">
+                </div>
+                <div class="layui-form-mid" style="color:red">网站管理员姓名</div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加用户</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    $("#ok").click(function () {
+        $.ajax({
+            type:'POST',
+            url:'/add_user',
+            dataType:'json',
+            data:{user_name:$("#user_name").val()},
+            success:function(data){
+                if(data.msg=="ok"){
+                    layer.msg("添加成功");
+                    setTimeout("window.location.reload()",1000);
+                }else if(data.msg=="have"){
+                    layer.msg("用户已存在");
+                    setTimeout("window.location.reload()",1000);
+                }
+            }
+        });
+
+    });
+
+
+
+</script>

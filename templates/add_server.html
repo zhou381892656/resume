@@ -1,0 +1,151 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                新增计算服务：
+            </blockquote>
+
+            <div class="main">
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">服务器别名</label>
+                    <div class="layui-input-block">
+                      <input id="server_name" type="text" name="servername" autocomplete="off" placeholder="请输入服务器别名" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">服务器地区</label>
+                    <div class="layui-input-block">
+                      <input id="server_city" type="text" name="serverolace" autocomplete="off" placeholder="请输入服务器地区" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">公网IP</label>
+                    <div class="layui-input-block">
+                      <input id="w_ip" type="text" name="serverolace" autocomplete="off" placeholder="请输入服务器公网IP，可绑定多个ip" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">内网IP</label>
+                    <div class="layui-input-block">
+                      <input id="n_ip" type="text" name="serverolace" autocomplete="off" placeholder="请输入服务器内网IP，可绑定多个ip" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">ssh账号</label>
+                    <div class="layui-input-block">
+                      <input id="ssh_user" type="text" name="serverolace" autocomplete="off" placeholder="请输入ssh账号" class="layui-input">
+                    </div>
+                  </div> 
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">ssh密码</label>
+                    <div class="layui-input-block">
+                      <input id="ssh_pwd" type="text" name="serverolace" autocomplete="off" placeholder="请输入ssh密码" class="layui-input">
+                    </div>
+                  </div>
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">ssh端口</label>
+                    <div class="layui-input-block">
+                      <input id="ssh_port" type="text" name="serverolace" autocomplete="off" placeholder="请输入ssh端口" class="layui-input">
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">业务类型</label>
+                    <div class="layui-input-block">
+                      <select id="type" name="interest" lay-filter="aihao">
+                        <option value=""></option>
+                        <option value="yuan">源站</option>
+                        <option value="cdn">CDN站</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">服务器备注</label>
+                    <div class="layui-input-block">
+                      <textarea id="server_note" placeholder="请输入内容" class="layui-textarea"></textarea>
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <button id="submit" class="layui-btn" lay-submit="" lay-filter="demo2">提交</button>
+                  </div> 
+
+
+
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+
+
+<script type="text/javascript">
+ function tip(name){
+    layer.open({
+      title: '提示',
+      content: name
+    });     
+}   
+    $(function(){
+        $('#submit').on('click',function(){
+            var server_name = $('#server_name').val();
+            var server_city = $('#server_city').val();
+            var w_ip = $('#w_ip').val();
+            var n_ip = $('#n_ip').val();
+            var ssh_user = $('#ssh_user').val();
+            var ssh_pwd = $('#ssh_pwd').val();
+            var ssh_port = $('#ssh_port').val();
+            var type = $('#type option:selected').val();
+            var server_note = $('#server_note').val();
+            var dataArr = ['服务器别名','地区','服务器公网IP','服务器外网IP','ssh账号','ssh账号密码','ssh端口号','业务类型','服务器备注'];
+            var arr = [server_name,server_city,w_ip,n_ip,ssh_user,ssh_pwd,ssh_port,type,server_note];
+            var arrIndex = ['server_name','server_city','w_ip','n_ip','ssh_user','ssh_pwd','ssh_port','type','server_note'];
+            var data = {};
+            for(var i = 0; i < arrIndex.length;i++){
+                data[arrIndex[i]] = arr[i];
+            }
+            for(var key in data){
+                if(data[key] == ''){
+                    var n = arrIndex.indexOf(key);
+                    tip(dataArr[n]+'不能为空');
+                    return;
+                }
+            }
+            var loading=layer.load(1, {shade: [0.8, '#393D49']});
+            $.ajax({
+                url:'/add_server_msg',
+                type:'POST',
+                data:data,
+                success:function(res){
+                    console.log(res);
+                    window.location.reload();
+                }
+            })
+        })
+    })
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+

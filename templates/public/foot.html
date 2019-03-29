@@ -1,0 +1,279 @@
+{% load staticfiles %}
+<script src="{% static "js/jquery.js" %}"></script>
+<script src="{% static "layui/layui.all.js" %}"></script>
+<script src="{% static 'js/crc32.js' %}"></script>
+<script>
+    //每五分钟自动同步一次，
+    {#var timer_pl=window.setInterval("get_min_data_pl()",1000*60*5);#}
+
+
+    //每10秒同步一条
+    {#var timer_pl=window.setInterval("get_min_data_pl()",1000*10);#}
+    function get_min_data_pl() {
+        //线上的网站才同步,线下不同步
+        if(window.location.hostname=="api-dg.snsnb.com"){
+            $.ajax({
+                type:'GET',
+                url:'http://api.shawdo.com/api/admin/public/get_min_Data',
+                dataType:'json',
+                success:function(data){
+                    if(data.msg=="none"){
+                        {#clearInterval(timer_pl);#}
+                        return;
+                    }
+                    var host_name=data['host_name'];
+                    var page_url=data['url'];
+                    var page_cid=data['cid'];
+                    save_api_data_pl(host_name,page_url,page_cid);
+                }
+            });
+        }
+    }
+
+
+    //保存到数据库
+    function save_api_data_pl(host_name,page_url,page_cid){
+        $.ajax({
+            type:'POST',
+            url:'/save_all_url',
+            dataType:'json',
+            data:{host_name: host_name,page_url: page_url,page_cid: page_cid},
+            success:function(data){
+                if(data.msg=="success"){
+                    del_api_pl();
+                }
+            }
+        });
+    }
+
+    function del_api_pl(){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/del_min_Data',
+            dataType:'json',
+            data:{msg: "success"},
+            success:function(data){
+                if(data.msg=="success"){
+                    get_min_data_pl();
+                }else if(data.msg=="error"){
+                    del_api_pl();
+                }
+            },
+            error:function(jqXHR){
+                del_api_pl();
+            }
+        });
+    }
+
+
+
+    //每5分钟自动同步一次，
+    {#var timer=window.setInterval("get_min_data()",1000*60*5);#}
+    function get_min_data() {
+        //线上的网站才同步,线下不同步
+        if(window.location.hostname=="api-dg.snsnb.com"){
+            $.ajax({
+                type:'GET',
+                url:'http://api.shawdo.com/api/admin/public/getDjangoWeb',
+                dataType:'json',
+                data:{type:7},
+                success:function(data){
+                    {#console.log(data);#}
+                    var all_data = data.data;
+                    for(var key in all_data){
+                        var add_time = all_data[key]['updatetime'];
+                        var url_data = JSON.parse(all_data[key]['url_data']);
+                        var url_status = JSON.parse(all_data[key]['url_status']);
+                        var web_id = all_data[key]['web_id'];
+                        if(url_data[0]==""){
+                            var index_url="";
+                        }else{
+                            var index_url=url_data[0]['url'];
+                        }
+                        if(url_data[1]==""){
+                            var column_url="";
+                        }else{
+                            var column_url=url_data[1]['url'];
+                        }
+                        if(url_data[2]==""){
+                            var content_url="";
+                        }else{
+                            var content_url=url_data[2]['url'];
+                        }
+                        var index_status=url_status[0];
+                        var column_status=url_status[1];
+                        var content_status=url_status[2];
+                        add_404_data(web_id,add_time,index_url,column_url,content_url,index_status,column_status,content_status);
+                    }
+
+                }
+            });
+        }
+    }
+
+
+    //404队列
+    var arr_404=[];
+    //加入请求队列
+	function add_404_data(web_id,add_time,index_url,column_url,content_url,index_status,column_status,content_status)
+	{
+	        var Item = [];
+	        Item[0]=web_id;
+	        Item[1]=add_time;
+	        Item[2]=index_url;
+	        Item[3]=column_url;
+	        Item[4]=content_url;
+	        Item[5]=index_status;
+	        Item[6]=column_status;
+	        Item[7]=content_status;
+	        arr_404.push(Item);     //将当前请求添加到队列末尾
+	        if(arr_404.length==1)  //如果请求队列里只有当前请求立即要求执行队列，如果有其他请求，那么就不要求执行队列
+	        {
+	            Exearr();
+	        }
+	}
+
+	//执行队列里的顺序第一个的请求
+	function Exearr()
+	{
+	    if( arr_404.length>0)  //如果队列里有请求执行 AJAX请求
+	    {
+	        var ArgItem = arr_404[0];
+	        save(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4],ArgItem[5],ArgItem[6],ArgItem[7]);
+	    }
+	}
+
+    function save(web_id,add_time,index_url,column_url,content_url,index_status,column_status,content_status){
+	    $.ajax({
+            type:'POST',
+            url:'/update_monitor',
+            dataType:'json',
+            data:{web_id: web_id,add_time: add_time,index_url: index_url,column_url:column_url,content_url:content_url,index_status:index_status,column_status:column_status,content_status:content_status},
+            success:function(data){
+                if(data.msg=="success"){
+                    arr_404.shift();
+                    Exearr();
+                }
+            }
+        });
+    }
+
+
+
+    //保存到数据库
+    function save_api_data(host_name,page_url,page_cid){
+        $.ajax({
+            type:'POST',
+            url:'/save_all_url',
+            dataType:'json',
+            data:{host_name: host_name,page_url: page_url,page_cid: page_cid},
+            success:function(data){
+                if(data.msg=="success"){
+                    del_api();
+                }
+            }
+        });
+    }
+
+    function del_api(){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/del_min_Data',
+            dataType:'json',
+            data:{msg: "success"},
+            success:function(data){
+                if(data.msg=="success"){
+                    get_min_data();
+                }else if(data.msg=="error"){
+                    del_api();
+                }
+            },
+            error:function(jqXHR){
+                del_api();
+            }
+        });
+    }
+
+
+
+    //每10秒同步一条
+    {#var timer1=window.setInterval("auto_olink()",1000*10);#}
+    function auto_olink() {
+        //线上的网站才自动内链
+        if(window.location.hostname=="api-dg.snsnb.com"){
+            $.ajax({
+                type: 'GET',
+                url: '/get_min_semantic',
+                dataType: 'json',
+                success: function (data) {
+                    var y_page_url = data['url1'];
+                    var crc32 = CRC32.str(y_page_url);
+                    crc32 = sprintf(crc32);
+                    var content = "<a href=\"" + data['url2'] + "\">" + data['title2'] + "</a>";
+                    var yuan_ip = "" + data['yuan_ip'];
+                    var id=data['id'];
+                    post_del_cache_auto(y_page_url, crc32, 7, content, yuan_ip ,id)
+                }
+            });
+        }
+    }
+
+
+    function post_del_cache_auto(y_page_url,crc32,tf_block,content,yuan_ip,id){
+	    var str1 = y_page_url;
+        var reg1 = /[^\/]*\/[^\/]*\/[^\/]*\//;
+        str1 = str1.replace(reg1, "c_cache/");
+        var str2 = y_page_url;
+        var reg2 =  /^[^\/]*\/[^\/]*\/[^\/]*\//;
+        str2 = str2.match(reg2)[0];
+        var cache_url=str2+str1;
+	    $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:y_page_url,crc32:crc32,bid:tf_block,bcontent:content,ip:yuan_ip},
+            success:function(data){
+                //删除CDN缓存
+                $.ajax({
+                    type:'GET',
+                    url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                    dataType:'json',
+                    data:{url:y_page_url,crc32:crc32,ip:yuan_ip},
+                    success:function(data1){
+                        if(data1.errorCode==200){
+                            var index=layer.open({
+                                shadeClose:true,
+                                type: 2,
+                                content: cache_url,
+                            });
+                            layer.close(index);
+                            $.ajax({
+                                type:'POST',
+                                url:'/update_semantic_status',
+                                dataType:'json',
+                                data:{id:id},
+                                success:function(data1){
+                                    {#clearInterval(timer1);#}
+                                }
+                            });
+                        }
+                    }
+                });
+                //删除CDN缓存end
+            }
+        });
+    }
+
+
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+</script>
+</html>

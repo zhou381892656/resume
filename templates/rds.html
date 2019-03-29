@@ -1,0 +1,209 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                站点信息：
+            </blockquote>
+            <div class="layui-form-item">
+                <label class="layui-form-label">域名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="api_table_name" class="layui-input" oninput="copy()">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：www.baidu.com（或baiud.com）建站（必填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库</label>
+                <div class="layui-input-inline">
+                    <select  id="db_type">
+                        <option value="rds">RDS</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">（必选）</div>
+            </div>
+            <div class="layui-form-item" id="db_name_box">
+                <label class="layui-form-label">数据库名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_name" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：www_baidu_com（必填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">账号</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_user" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：root（必填）注意用户名的长度不能超过16位，这里已经做了自动截取</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_pass" class="layui-input" value="qqqAAA0130">
+                </div>
+                <div class="layui-form-mid" style="color:red">（必填）</div>
+            </div>
+
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加数据库</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    function copy(){
+        var str=$("#api_table_name").val();
+        str=str.replace(/^www\./,"");
+        str=str.replace(/^m\./,"");
+        str=str.replace(/\./g,"_");
+        str=str.replace(/\-/g,"");
+        str="db_"+str;
+        //大写强转小写
+        str=str.toLowerCase();
+        var user=str.substring(0,16);
+        user=user.toLowerCase();
+        $("#db_user").val(user);
+        $("#db_name").val(str);
+
+
+    }
+
+    $("#ok").click(function () {
+        create_db();
+    });
+
+
+
+
+    var rds_error=[];
+    //RDS操作
+    function create_db(){
+
+        var db_user=$("#db_user").val();
+        //阿里云用户名长度不能超过16位,且不能以下划线结尾
+        db_user=db_user.substring(0,16);
+        db_user=db_user.replace(/\-/g,"");
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        $.ajax({
+            type:'POST',
+            url:'/get_webcf',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:$("#api_table_name").val()},
+            success:function(data){
+                $.ajax({
+                    type:'POST',
+                    url:'/batch_update_rds',
+                    dataType:'json',
+                    async:false,
+                    data:{web_id:data[0].id,type:$("#db_type").val(),dbname:$("#db_name").val(),dbuser:db_user,dbpass:$("#db_pass").val()},
+                    success:function(data){
+
+                    }
+                });
+            }
+        });
+        //创建数据库
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/CreateDatabase',
+            dataType:'json',
+            async:false,
+            data:{DBName:$("#db_name").val(),DBDescription:"创建数据库"+$("#db_name").val()},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    success:function(data1,status){
+                        rds_error.push("数据库创建成功");
+                    },error:function(jqXHR){
+                        {#console.log(jqXHR.responseJSON.Message);#}
+                        rds_error.push("数据库创建失败"+jqXHR.responseJSON.Message+"<br>");
+                    }
+                });
+            }
+        });
+        //创建账号
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/CreateAccount',
+            dataType:'json',
+            async:false,
+            data:{AccountName:db_user,AccountPassword:$("#db_pass").val(),AccountDescription:""},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    success:function(data1,status){
+                        rds_error.push("账号创建成功");
+                    },error:function(jqXHR){
+                        {#console.log(jqXHR.responseJSON.Message);#}
+                        rds_error.push("账号创建失败"+jqXHR.responseJSON.Message+"<br>");
+                    }
+                });
+            }
+        });
+        setTimeout("ghost()","3000");//3秒后给账号权限，防止运行太快导致授权失败。
+    }
+    function ghost(){
+        var db_user=$("#db_user").val();
+        //阿里云用户名长度不能超过16位,且不能以下划线结尾
+        db_user=db_user.substring(0,16);
+        db_user=db_user.replace(/\-/g,"");
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        //账号授权
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/GrantAccountPrivilege',
+            dataType:'json',
+            async:false,
+            data:{AccountName:db_user,DBName:$("#db_name").val(),DBDescription:""},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    async:false,
+                    success:function(data1,status){
+                        rds_error.push("账号授权成功"+"<br>");
+                        layer.open({
+                            title: '处理结果',
+                            shadeClose:true,
+                            content:
+                               ""+rds_error,
+                            end: function(index, layero){
+                                setTimeout("window.location.reload()",1000);
+                            }
+                        });
+                    },error:function(jqXHR){
+                        rds_error.push("账号创建失败"+jqXHR.responseJSON.Message+"<br>");
+                        layer.open({
+                            title: '处理结果',
+                            shadeClose:true,
+                            content:
+                               ""+rds_error,
+                            end: function(index, layero){
+                                setTimeout("window.location.reload()",1000);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+
+
+</script>

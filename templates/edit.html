@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>友情链接管理</title>
+    {% load staticfiles %}
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "js/crc32.js" %}"></script>
+    <script src="{% static 'js/csrf.js' %}"></script>
+    <script src="{% static "layui/layui.all.js" %}"></script>
+    <link rel="stylesheet" href="{% static "css/bootstrap.css" %}">
+</head>
+<body>
+    <div class="container">
+        <div id="data">
+            <div class="form-group">
+                <div>
+                    <input type="text" placeholder="URL" id="url">
+                    <input type="text" placeholder="关键词" id="key_words">
+                    <input type="text" placeholder="联系人QQ" id="qq">
+                    <input id="btnAddInput" class="btn btn-primary" type="button" value="新增" onclick="AddInput()" />
+                     <button id="post" type="submit" class="btn btn-success">推送所有友链</button>
+                </div>
+            </div>
+        </div>
+        <table class="table table-hover table-bordered table-list">
+	        <thead>
+	        <tr>
+	            <th>对方站点</th>
+	            <th width="200">对方站点的关键词</th>
+                <th width="200">对方联系QQ</th>
+                <th width="200">操作</th>
+	        </tr>
+	        </thead>
+            <tbody id="editinput">
+
+            </tbody>
+
+	    </table>
+        <div class="form-group">
+            <label><span class="form-required"></span></label>
+            <div id="addinput">
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var post_url="{{ param }}";
+    var url='http://'+post_url+'/';
+    var crc32=CRC32.str(url);
+    crc32=sprintf(crc32);
+    //添加友链队列
+    var SaveArray = [];
+    $("#post").click(function(){
+        var arr_key=[];
+        $("input[name='key[]']").each(function(j,item){
+            arr_key[j]=item.value;
+        });
+        var array_value=[];
+        var content="";
+        $("input[name='value[]']").each(function(k,item){
+            array_value[k]=item.value;
+        });
+
+        var obj_data=ArrayToObj(arr_key,array_value);
+        console.log(obj_data);
+        for(var obj_key in obj_data){
+            content += "<a href=\""+obj_data[obj_key]+"\">"+obj_key+"</a>    ";
+        }
+        console.log(content);
+        $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:post_url,crc32:crc32,bid:1,bcontent:content},
+            success:function(data){
+                 layer.msg(data.errorMsg);
+                //更新友情链接
+                if(data.success){
+                    //删除CDN缓存
+                    $.ajax({
+                        type:'GET',
+                        url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                        dataType:'json',
+                        data:{url:post_url,crc32:crc32},
+                        success:function(data1){
+                            if(data1.success){
+                                layer.msg(data1.errorMsg);
+                                $.ajax({
+                                    type:'GET',
+                                    url:'http://api.shawdo.com/api/admin/public/delCDNCache',
+                                    dataType:'json',
+                                    data:{url:post_url,crc32:crc32},
+                                    success:function(data2){
+                                        if(data1.success){
+                                            layer.msg(data2.errorMsg);
+                                        }else{
+                                            layer.msg(data2.errorMsg);
+                                        }
+                                    },
+                                    error:function(jqXHR){
+                                    }
+                                });
+                            }else{
+                                layer.msg(data1.errorMsg);
+                            }
+                        },
+                        error:function(jqXHR){
+                        }
+                    });
+                    //删除CDN缓存end
+                }else{
+                    alert(data.errorMsg);
+                }
+            },
+            error:function(jqXHR){
+            }
+        });
+    });
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+    //添加删除按钮
+    var count = 0;
+
+    function AddInput() {
+        count++;
+        var question = document.getElementById("addinput");
+        var input_key = document.createElement("input");
+        input_key.type = "text";
+        input_key.id = "datak" + count + "";
+        input_key.name = "key1[]";
+        var input_value = document.createElement("input");
+        input_value.type = "text";
+        input_value.id = "datav" + count + "";
+        input_value.name = "value1[]";
+        var key=document.createTextNode("关键词：");
+        var value=document.createTextNode("URL：");
+        var del= document.createElement("input");
+        del.type = "button";
+        del.id = "del" + count + "";
+        del.value="删除";
+        del.onclick=function(){
+            id=this.id;
+            id=id.substr(3);
+            k=document.getElementById("datak"+id);
+            k.parentNode.removeChild(k);
+            v=document.getElementById("datav"+id);
+            v.parentNode.removeChild(v);
+            key.parentNode.removeChild(key);
+            value.parentNode.removeChild(value);
+            d=document.getElementById("del"+id);
+            d.parentNode.removeChild(d);
+        }
+        question.appendChild(key);
+        question.appendChild(input_key);
+        question.appendChild(value);
+        question.appendChild(input_value);
+        question.appendChild(del);
+        var br = document.createElement("br");
+        question.appendChild(br);
+    }
+    function delInput(id){
+        $("#del1"+id).remove();
+    }
+    function ArrayToObj(arrA, arrB) {
+        let info = {};
+        for(let i = 0; i < arrA.length; i++ ) {
+            info[arrA[i]] = arrB[i];
+        }
+
+        return info;
+    }
+
+
+
+
+
+    //2018.11.7
+    //读取links表
+     $.ajax({
+            type:'POST',
+            url:'/link_list',
+            dataType:'json',
+            data:{param: post_url},
+            success:function(data){
+                var o_str = "";
+                for(var o_key in data){
+                    o_str += "<tr>\n" +
+                                "<td>"+data[o_key]["link_url"]+"</td>\n" +
+                                "<td>"+data[o_key]["key_words"]+"</td>\n" +
+                                "<td>"+data[o_key]["id"]+"</td>\n" +
+                             "</tr>";
+                }
+                $("#editinput").html(o_str);
+            },
+            error:function(jqXHR){
+            }
+        });
+
+   $("#save").click(function(){
+        var arr_key=[];
+        $("input[name='key1[]']").each(function(j,item){
+            arr_key[j]=item.value;
+        });
+        var arr_value=[];
+        $("input[name='value1[]']").each(function(k,item){
+            arr_value[k]=item.value;
+        });
+        var link_obj=ArrayToObj(arr_key,arr_value);
+        for(var n_key in link_obj){
+            var key_words=n_key;
+            var link_url=link_obj[n_key];
+            AddSaveArray(url,crc32,key_words,link_url);
+        }
+    });
+
+
+	function AddSaveArray(index_url,crc32,key_words,link_url)
+	{
+	        var Item = [];
+	        Item[0]=index_url;
+	        Item[1]=crc32;
+            Item[2]=key_words;
+	        Item[3]=link_url;
+	        SaveArray.push(Item);
+	        if(SaveArray.length==1)
+	        {
+	            ExeSaveArray();
+	        }
+	}
+
+	function ExeSaveArray()
+	{
+	    if( SaveArray.length>0)
+	    {
+	        var ArgItem = SaveArray[0];
+	        save_data(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3]);
+	    }
+	}
+
+	//保存到数据库
+    function save_data(index_url,crc32,key_words,link_url){
+        $.ajax({
+            type:'POST',
+            url:'/add_link',
+            dataType:'json',
+            //status: 1.添加 2.编辑 3.删除
+            data:{index_url:index_url,crc32:crc32,key_words:key_words,link_url:link_url},
+            success:function(data){
+                if(data.msg=="ok"){
+                    layer.msg("关键词:"+data.tips+"URL:"+data.url+"添加成功");
+                    SaveArray.shift();  //移除已完成请求
+                    ExeSaveArray();//执行队列请求
+                    if(SaveArray.length==0){
+                        {#layer.msg("所有友链添加完成,可以进行推送更新操作");#}
+                        setTimeout("window.location.reload()",2000);
+                    }
+                }else if(data.msg=="have"){
+                    layer.msg("关键词:"+data.tips+"URL:"+data.url+"已经存在");
+                    SaveArray.shift();  //移除该请求
+                    ExeSaveArray();//执行队列请求
+                }
+            },
+            error:function(jqXHR){
+                SaveArray.shift();  //移除该请求
+                ExeSaveArray();//执行队列请求
+            }
+        });
+    }
+    //2018.11.7end
+</script>
+</html>

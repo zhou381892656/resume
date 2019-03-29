@@ -1,0 +1,568 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                站点信息：
+            </blockquote>
+            <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                <a href="/add_website_page" style="color:deepskyblue"><span style="color:deepskyblue">新增单个站点</span></a>
+                <a href="/batch_add_website_page"><span style="color:deepskyblue">批量新增站点</span></a>
+            </span>
+            <div class="layui-form-item">
+                <label class="layui-form-label">域名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="api_table_name" class="layui-input" oninput="copy()">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：www.baidu.com（或baiud.com）建站（必填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">源服务器</label>
+                <div class="layui-input-inline">
+                    <select id="yuan_ip">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">CDN服务器</label>
+                <div class="layui-input-inline">
+                    <select id="docker_ip">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">负载均衡服务器</label>
+                <div class="layui-input-inline">
+                    <select id="load_balance">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">网站负责人</label>
+                <div class="layui-input-inline">
+                    <select  id="web_user">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">（必选）</div>
+            </div>
+            <hr class="layui-bg-green">
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库</label>
+                <div class="layui-input-inline">
+                    <select  id="db_type">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">（必选）</div>
+            </div>
+            <div class="layui-form-item" id="db_name_box">
+                <label class="layui-form-label">数据库名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_name" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：www_baidu_com（必填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">账号</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_user" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">例：root（必填）注意用户名的长度不能超过16位，这里已经做了自动截取</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_pass" class="layui-input" value="qqqAAA0130">
+                </div>
+                <div class="layui-form-mid" style="color:red">（必填）</div>
+            </div>
+            <hr class="layui-bg-green">
+            <div class="layui-form-item">
+                <label class="layui-form-label">PC网址</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="web_url" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid layui-word-aux">例：http://www.baidu.com/（选填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">移动端网址</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="m_url" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid layui-word-aux">例：http://m.baidu.com/（选填）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">网站别名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="other_name" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid layui-word-aux">多个网站别名之间用英文逗号,隔开。<span style="color:red">有移动端的情况下必须加上，没有可以按默认填写。</span>例：www.baidu.com,m.baidu.com（选填）</div>
+            </div>
+
+            <hr class="layui-bg-green">
+            <div class="layui-form-item">
+                <label class="layui-form-label">解析IP</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="cdn_ip" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid layui-word-aux">排除C段使用（选填）</div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加站点</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+
+    function copy(){
+        var str=$("#api_table_name").val();
+        str = str.replace(/\s+/g,"");
+        $("#web_url").val("http://"+str+"/");
+        $("#other_name").val(str);
+        str=str.replace(/^www\./,"");
+        str=str.replace(/^m\./,"");
+        str=str.replace(/\./g,"_");
+        str=str.replace(/\-/g,"");
+        str="db_"+str;
+        str=str.toLowerCase();
+        var user=str.substring(0,16);
+        user=user.replace(/\-/g,"");
+        user=user.toLowerCase();
+        $("#db_user").val(user);
+        $("#db_name").val(str);
+
+
+    }
+    layui.use(['form'], function() {
+        var form = layui.form;
+        $.ajax({
+            type: 'POST',
+            url: '/get_web_user',
+            dataType: 'json',
+            success: function (data) {
+                {#console.log(data);#}
+                var str = "<option value=\"\">请选择</option>";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['user_name'] +data[key]['id'] + "</option>";
+                }
+                $("#web_user").html(str);
+                form.render();
+            }
+        });
+        $.ajax({
+            type: 'POST',
+            url: '/server_ip_data',
+            dataType: 'json',
+            data:{server_type:1,msg_type:"cdn"},
+            success: function (data) {
+                console.log(data);
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['server_ip'] + "</option>";
+                }
+                $("#docker_ip").html(str);
+                form.render();
+            }
+        });
+
+       $.ajax({
+            type: 'POST',
+            url: '/server_ip_data',
+            dataType: 'json',
+            data:{server_type:1,msg_type:"yuan"},
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['server_ip'] + "</option>";
+                }
+                $("#yuan_ip").html(str);
+                form.render();
+            }
+        });
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/server_avg_data',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['load_ip'] + "</option>";
+                }
+                $("#load_balance").html(str);
+                form.render();
+            }
+        });
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/server_rds_data',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['ins_id'] + "</option>";
+                }
+                $("#db_type").html(str);
+                form.render();
+            }
+        });
+
+    });
+
+
+    function m_table(m_url){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/create_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:m_url},
+            success:function(data){
+
+            }
+        });
+    }
+    $("#ok").click(function () {
+        if($("#db_user").val().length>16){
+            layer.msg("数据库用户名大于16位，已自动截取为16位，实际用户名已生成用户名为主");
+        }
+        var loading=layer.load(1, {shade: [0.8, '#393D49']});
+        if(!yz_api_table_name($("#api_table_name").val())){
+            layer.msg("域名输入有误，请参照例子填写正确的格式");
+            return;
+        }
+
+        if(!yz_web_url($("#web_url").val())){
+            layer.msg("PC端网址输入有误，请参照例子填写正确的格式");
+            return;
+        }
+        if($("#m_url").val()!=""){
+            if(!yz_m_url($("#m_url").val())){
+                layer.msg("移动端网址输入有误，请参照例子填写正确的格式");
+                return;
+            }
+        }
+        //创建表
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/create_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:$("#api_table_name").val()},
+            success:function(data){
+                var loading=layer.load(1, {shade: [0.8, '#393D49']});
+                layer.msg(data.msg);
+            }
+        });
+        //m站不为空时新建m站的表和记录
+        if($("#m_url").val() !=""){
+            var m_url=$("#m_url").val();
+            m_url=m_url.replace(/http:\/\/(.*?)\//,"$1");
+            $.ajax({
+                type:'POST',
+                url:'/add_website',
+                dataType:'json',
+                async:false,
+                data:{api_table_name:m_url,yuan_ip:$("#yuan_ip").find("option:selected").text(),cdn_ip:$("#cdn_ip").val(),web_url:$("#web_url").val(),m_url:$("#m_url").val(),docker_ip:$("#docker_ip").find("option:selected").text(),load_balance:$("#load_balance").find("option:selected").text(),type:$("#db_type").val(),dbname:$("#db_name").val(),dbuser:$("#db_user").val(),dbpass:$("#db_pass").val(),user_id:$("#web_user").val(),other_name:$("#other_name").val(),server_rds_id:$("#db_type").val(),server_avg_id:$("#load_balance").val(),server_yuan_id:$("#yuan_ip").val(),server_cdn_id:$("#docker_ip").val()},
+                success:function(data){
+                    if(data.msg=="success"){
+                        setTimeout(m_table(m_url),"3000");
+                    }else if(data.msg=="have"){
+                        layer.msg("数据库中已存在m站记录");
+                    }
+
+                }
+            });
+        }
+        $.ajax({
+            type:'POST',
+            url:'/add_website',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:$("#api_table_name").val(),yuan_ip:$("#yuan_ip").find("option:selected").text(),cdn_ip:$("#cdn_ip").val(),web_url:$("#web_url").val(),m_url:$("#m_url").val(),docker_ip:$("#docker_ip").find("option:selected").text(),load_balance:$("#load_balance").find("option:selected").text(),type:$("#db_type").val(),dbname:$("#db_name").val(),dbuser:$("#db_user").val(),dbpass:$("#db_pass").val(),user_id:$("#web_user").val(),other_name:$("#other_name").val(),server_rds_id:$("#db_type").val(),server_avg_id:$("#load_balance").val(),server_yuan_id:$("#yuan_ip").val(),server_cdn_id:$("#docker_ip").val()},
+            success:function(data){
+                if(data.msg=="success"){
+                    $.ajax({
+                        type:'POST',
+                        url:"/save_cdn_group",
+                        dataType:'json',
+                        async:false,
+                        data:{web_id:data.web_id,docker_ip:$("#docker_ip").find("option:selected").text()},
+                        success:function(data1){
+                            if(data1.msg=="ok"){
+                                $.ajax({
+                                    type:'POST',
+                                    url:"/push_cdn_group",
+                                    dataType:'json',
+                                    async:false,
+                                    data:{web_id:data.web_id,num:data1.num},
+                                    success:function(data_cdn){
+                                        if(data_cdn.msg=="ok"){
+                                            layer.msg("pod_cdn分组成功");
+                                            var res_data=data_cdn.data;
+                                            var idc_ip=data_cdn.idc_ip;
+                                            var web_arr=[];
+                                            for(var key in res_data){
+                                                var other_name=res_data[key]['other_name'];
+                                                var other=other_name.split(',');
+                                                var web={
+                                                    domain:res_data[key]['api_table_name'],
+                                                    yuan_ip:res_data[key]['load_balance'],
+                                                    other_domain:other
+                                                };
+                                                web_arr.push(web);
+                                            }
+                                            var post_data={
+                                                    pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,
+                                                    web:web_arr
+                                                };
+                                            var json=JSON.stringify(post_data);
+                                            {#console.log(json);#}
+                                            var type=4;
+                                            if(window.location.hostname=="api-dg.snsnb.com") {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                                    dataType: 'json',
+                                                    async: false,
+                                                    data: {data: json, type: type, idc_ip: idc_ip},
+                                                    success: function (data2) {
+                                                        layer.msg(data2.msg);
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    $.ajax({
+                        type:'POST',
+                        url:"/save_yuan_group",
+                        dataType:'json',
+                        async:false,
+                        data:{web_id:data.web_id,yuan_ip:$("#yuan_ip").find("option:selected").text()},
+                        success:function(data2){
+                            if(data2.msg=="ok"){
+                                $.ajax({
+                                    type:'POST',
+                                    url:"/push_yuan_group",
+                                    dataType:'json',
+                                    async:false,
+                                    data:{web_id:data.web_id,num:data2.num},
+                                    success:function(data_yuan){
+                                        if(data_yuan.msg=="ok"){
+                                            layer.msg("pod_yuan分组成功");
+                                            var res_data=data_yuan.data;
+                                            var idc_ip=data_yuan.idc_ip;
+                                            var web_arr=[];
+                                            for(var key in res_data){
+                                                var other_name1=res_data[key]['other_name'];
+                                                var other1=other_name1.split(',');
+                                                var web={
+                                                    domain:res_data[key]['api_table_name'],
+                                                    other_domain:other1
+                                                };
+                                                web_arr.push(web);
+                                            }
+                                            var post_data={
+                                                    pod:"web"+data_yuan.pod_name+"-"+data_yuan.num,
+                                                    web:web_arr
+                                                };
+                                            var json=JSON.stringify(post_data);
+                                            {#console.log(json);#}
+                                            var type=3;
+                                            if(window.location.hostname=="api-dg.snsnb.com") {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                                    dataType: 'json',
+                                                    async: false,
+                                                    data: {data: json, type: type, idc_ip: idc_ip},
+                                                    success: function (data2) {
+                                                        layer.msg(data2.msg);
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }else if(data.msg=="have"){
+                    layer.close(loading);
+                    layer.msg("数据库中已存在该域名");
+                }
+            }
+        });
+        //rds
+        create_db();
+    });
+
+
+
+
+
+    var rds_error=[];
+    //RDS操作
+    function create_db(){
+        var db_user=$("#db_user").val();
+        //阿里云用户名长度不能超过16位,且不能以下划线结尾
+        db_user=db_user.substring(0,16);
+        db_user=db_user.replace(/\-/g,"");
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        var ins_id=$("#db_type").find("option:selected").text();
+        //创建数据库
+        if(window.location.hostname=="api-dg.snsnb.com") {
+            $.ajax({
+                type: 'POST',
+                url: 'http://api.shawdo.com/api/admin/public/CreateDatabase',
+                dataType: 'json',
+                async: false,
+                data: {DBName: $("#db_name").val(), DBDescription: "创建数据库" + $("#db_name").val(), DBInstanceId: ins_id},
+                success: function (data) {
+                    $.ajax({
+                        type: 'GET',
+                        url: data,
+                        dataType: 'json',
+                        success: function (data1, status) {
+                            rds_error.push("数据库创建成功");
+                        }, error: function (jqXHR) {
+                            {#console.log(jqXHR.responseJSON.Message);#}
+                            rds_error.push("数据库创建失败" + jqXHR.responseJSON.Message + "<br>");
+                        }
+                    });
+                }
+            });
+            //创建账号
+            $.ajax({
+                type: 'POST',
+                url: 'http://api.shawdo.com/api/admin/public/CreateAccount',
+                dataType: 'json',
+                async: false,
+                data: {
+                    AccountName: db_user,
+                    AccountPassword: $("#db_pass").val(),
+                    AccountDescription: "docker_yuan:" + $("#yuan_ip").val(),
+                    DBInstanceId: ins_id
+                },
+                success: function (data) {
+                    $.ajax({
+                        type: 'GET',
+                        url: data,
+                        dataType: 'json',
+                        success: function (data1, status) {
+                            rds_error.push("账号创建成功");
+                        }, error: function (jqXHR) {
+                            {#console.log(jqXHR.responseJSON.Message);#}
+                            rds_error.push("账号创建失败" + jqXHR.responseJSON.Message + "<br>");
+                        }
+                    });
+                }
+            });
+            setTimeout("ghost()", "3000");//3秒后给账号权限，防止运行太快导致授权失败。
+        }
+    }
+    function ghost(){
+        var db_user=$("#db_user").val();
+        //阿里云用户名长度不能超过16位,且不能以下划线结尾
+        db_user=db_user.substring(0,16);
+        db_user=db_user.replace(/\-/g,"");
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        var ins_id=$("#db_type").find("option:selected").text();
+        //账号授权
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/GrantAccountPrivilege',
+            dataType:'json',
+            async:false,
+            data:{AccountName:db_user,DBName:$("#db_name").val(),DBDescription:"",DBInstanceId:ins_id},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    async:false,
+                    success:function(data1,status){
+                        rds_error.push("账号授权成功"+"<br>");
+                        layer.open({
+                            title: '处理结果',
+                            shadeClose:true,
+                            content:
+                               ""+rds_error,
+                            end: function(index, layero){
+                                setTimeout("window.location.reload()",1000);
+                            }
+                        });
+                    },error:function(jqXHR){
+                        rds_error.push("账号创建失败"+jqXHR.responseJSON.Message+"<br>");
+                        layer.open({
+                            title: '处理结果',
+                            shadeClose:true,
+                            content:
+                               ""+rds_error,
+                            end: function(index, layero){
+                                setTimeout("window.location.reload()",1000);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    //验证域名格式
+    function yz_api_table_name(url){
+        var myreg=new RegExp("");
+        if(myreg.test(url)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    //验证pc端地址格式
+    function yz_web_url(url) {
+        var myreg=new RegExp("^(http://|https://)(.*?)/$");
+        if(myreg.test(url)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    //验证移动端地址格式
+    function yz_m_url(url) {
+        var myreg=new RegExp("^(http://|https://)(m.)(.*?)/$");
+        if(myreg.test(url)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+
+</script>

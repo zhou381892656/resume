@@ -1,0 +1,149 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加项目：
+            </blockquote>
+            <div class="layui-form-item">
+                <label class="layui-form-label">项目名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="item" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">爬取站点</label>
+                <div class="layui-input-block" id="type">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">关键词</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="key" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">输入期望爬取的关键词</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">自动爬取</label>
+                <div class="layui-input-inline">
+                    <input type="checkbox" class="layui-btn" lay-skin="switch" lay-text="ON|OFF"  lay-filter="on_close" data-type="on_close">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加项目</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var on_close=false;
+    layui.use(['form'], function() {
+        var form = layui.form;
+        $.ajax({
+            type: 'POST',
+            url: '/all_type_name',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<input type=\"radio\" name=\"type\" value=\""+data[key]['type_name']+"\" title=\""+data[key]['type_name']+"\">";
+                }
+                $("#type").html(str);
+                form.render();
+            }
+        });
+        form.on('switch(on_close)', function(data){
+             console.log(data.elem.checked); //开关是否开启，true或者false
+             if(data.elem.checked){
+                on_close=true;
+                return on_close;
+             }else{
+                on_close=false;
+                return on_close;
+             }
+         });
+
+    });
+    console.log(on_close);
+    $("#ok").click(function () {
+        if(on_close){
+            $.ajax({
+                type:'POST',
+                url:'/add_item',
+                dataType:'json',
+                data:{item:$("#item").val(),type:$('input:radio:checked').val(),key:$("#key").val()},
+                success:function(data){
+                    if(data.msg=="ok"){
+                        $.ajax({
+                            type:'POST',
+                            url:'http://120.79.150.193:5000/debug/add_project',//爬虫地址
+                            dataType:'json',
+                            data:{type:$('input:radio:checked').val(),key:$("#key").val()},
+                            success:function(data){
+                                if(data.http_status == '200'){
+                                     $.ajax({
+                                        type:'POST',
+                                        url:'/add_porject',
+                                        dataType:'json',
+                                        data:{projects_name:$("#item").val(),pyspider_id:data.id},
+                                        success:function(data){
+                                            layer.msg("添加成功");
+                                            setTimeout("window.location.reload()",1000);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }else if(data.msg=="have"){
+                        layer.msg("项目已存在");
+                        setTimeout("window.location.reload()",1000);
+                    }
+                }
+            });
+        }else{
+            $.ajax({
+                type:'POST',
+                url:'/add_item',
+                dataType:'json',
+                data:{item:$("#item").val(),type:$('input:radio:checked').val(),key:$("#key").val()},
+                success:function(data){
+                    if(data.msg=="ok"){
+                        $.ajax({
+                            type:'POST',
+                            url:'http://120.79.150.193:5000/debug/add_todo_project',//爬虫地址
+                            dataType:'json',
+                            data:{type:$('input:radio:checked').val(),key:$("#key").val()},
+                            success:function(data){
+                                if(data.http_status == '200'){
+                                     $.ajax({
+                                        type:'POST',
+                                        url:'/add_porject',
+                                        dataType:'json',
+                                        data:{projects_name:$("#item").val(),pyspider_id:data.id},
+                                        success:function(data){
+                                            layer.msg("添加成功");
+                                            console.log(data);
+                                            //setTimeout("window.location.reload()",1000);
+                                            window.location.href='/item_list_page'
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }else if(data.msg=="have"){
+                        layer.msg("项目已存在");
+                        setTimeout("window.location.reload()",1000);
+                    }
+                }
+            });
+        }
+
+    });
+
+
+</script>

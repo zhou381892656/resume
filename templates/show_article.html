@@ -1,0 +1,49 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                文章详情：
+            </blockquote>
+            <!--<div class="layui-form-item">-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="layui-input-inline">-->
+                        <input type="text" id="title" id="title" placeholder="标题" class="layui-input">
+            <br/>
+              <input type="text"  id="time" placeholder="时间" class="layui-input">
+            <br/>
+
+            <br/>
+            <br/>
+            <br/>
+            <textarea cols="200" rows="30" id="contents"></textarea>
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="demoTable">-->
+                        <!--<button class="layui-btn" data-type="reload" id="search">查询</button>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+        $.ajax({
+        'url': 'http://120.79.150.193:5000/debug/get_article',
+        'type': 'post',
+        'data': {'article_id': "{{article_id}}",'item_id':"{{item_id}}"},
+        success: function (data) {
+            //console.log(JSON.parse(data));
+            var data = JSON.parse(data);
+            $('#contents').text(data['data']);
+           var times =  new Date(parseInt(data['time']) * 1000).toLocaleString().replace(/:\d{1,2}$/,' ');
+            $('#title').val(data['title']);
+            $('#time').val(times);
+        }
+    });
+</script>

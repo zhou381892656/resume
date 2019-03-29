@@ -1,0 +1,316 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加节点：
+            </blockquote>
+                <div id="formBox" style="padding-right:20px;"><div style="margin-top:20px;" class="layui-form-item">
+                    <label class="layui-form-label">栏目ID</label>
+                    <div class="layui-input-inline">
+                        <select id="lanmu_id" class="laiyuan" style="height:38px;width:200px;float:left;"></select>
+                    </div>
+                    <div class="layui-input-inline"><button class="layui-btn" id="get_lanmu">获取栏目</button>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">文章来源</label>
+                   <div class="layui-input-inline">
+                        <select id="laiyuan" class="laiyuan" style="height:38px;width:200px;float:left;">
+                        </select>
+                    </div>
+                    <div class="layui-input-inline">
+                        <label class="layui-form-label">其他方式</label>
+                        <input id="other" type="checkbox" style="width:38px;height:38px;" />
+                    </div>
+
+                </div>
+
+
+                    <div style="display:none;" class="layui-form-item">
+                    <label class="layui-form-label">域名</label>
+                    <div class="layui-input-block">
+                        <input name="yumin" type="text" id="yumin" placeholder="" class="layui-input" value="{{yumin}}">
+                    </div>
+                </div>
+                    <div style="display:none;" class="layui-form-item">
+                    <label class="layui-form-label">发布ID</label>
+                    <div class="layui-input-block">
+                        <input name="fabu" type="text" id="fabu_id" placeholder="发布ID" class="layui-input" value="{{web_id}}">
+                    </div>
+                </div>
+
+                <div id="fb" class="layui-form-item">
+                    <label class="layui-form-label">发布数量</label>
+                    <div class="layui-input-block">
+                        <input type="number" id="publish_nums" placeholder="发布数量(单位:个)" class="layui-input" value="">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">间隔时间</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="time" placeholder="间隔时间(单位:秒)" class="layui-input" value="">
+                    </div>
+                </div>
+               <div class="layui-form-item">
+                   <label class="layui-form-label">解析IP</label>
+                  <div class="layui-input-block">
+                   <select class="jiexi" style="height:38px;width:200px;">
+                 </select>
+                   </div>
+               </div>
+                </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <button class="layui-btn" lay-submit lay-filter="formDemo" id="put_now">立即提交</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script>
+    {#//消息队列待请求数据#}
+    {#var SaveArray = [];#}
+    {#var arr=[38];#}
+    {#for(var i=0;i<arr.length;i++){#}
+    {#    console.log(arr[i]);#}
+    {#    AddSaveArray(arr[i]);#}
+    {#}#}
+    {#var rds_error=[];#}
+    {#create_db();#}
+    {#function create_db(){#}
+    {##}
+    {#    var db_name="db_aimaib_com";#}
+    {#    //阿里云用户名长度不能超过16位#}
+    {#    var db_user=db_name.substring(0,16);#}
+    {#    db_user=db_user.replace(/-/g,"");#}
+    {#    var myreg=new RegExp("_$");#}
+    {#    if(myreg.test(db_user)){#}
+    {#        db_user=db_user.substring(0,15);#}
+    {#    }#}
+    {#    //创建数据库#}
+    {#    $.ajax({#}
+    {#        type:'POST',#}
+    {#        url:'http://api.shawdo.com/api/admin/public/CreateDatabase',#}
+    {#        dataType:'json',#}
+    {#        async:false,#}
+    {#        data:{DBName:db_name,DBDescription:"创建数据库"+db_name},#}
+    {#        success:function(data){#}
+    {#            $.ajax({#}
+    {#                type:'GET',#}
+    {#                url:data,#}
+    {#                dataType:'json',#}
+    {#                success:function(data1,status){#}
+    {#                    rds_error.push("数据库创建成功");#}
+    {#                },error:function(jqXHR){#}
+                        {#console.log(jqXHR.responseJSON.Message);#}
+    {#                    rds_error.push("数据库创建失败"+jqXHR.responseJSON.Message+"<br>");#}
+    {#                }#}
+    {#            });#}
+    {#        }#}
+    {#    });#}
+    {#    //创建账号#}
+    {#    $.ajax({#}
+    {#        type:'POST',#}
+    {#        url:'http://api.shawdo.com/api/admin/public/CreateAccount',#}
+    {#        dataType:'json',#}
+    {#        async:false,#}
+    {#        data:{AccountName:db_user,AccountPassword:"qqqAAA0130",AccountDescription:"docker_yuan:103.44.90.149"},#}
+    {#        success:function(data){#}
+    {#            $.ajax({#}
+    {#                type:'GET',#}
+    {#                url:data,#}
+    {#                dataType:'json',#}
+    {#                success:function(data1,status){#}
+    {#                    rds_error.push("账号创建成功");#}
+    {#                },error:function(jqXHR){#}
+                        {#console.log(jqXHR.responseJSON.Message);#}
+    {#                    rds_error.push("账号创建失败"+jqXHR.responseJSON.Message+"<br>");#}
+    {#                }#}
+    {#            });#}
+    {#        }#}
+    {#    });#}
+    {#    setTimeout("ghost()","3000");//3秒后给账号权限，防止运行太快导致授权失败。#}
+    {#}#}
+    {#function ghost(){#}
+    {#    var db_name="db_aimaib_com";#}
+    {#    //阿里云用户名长度不能超过16位#}
+    {#    var db_user=db_name.substring(0,16);#}
+    {#    db_user=db_user.replace(/-/g,"");#}
+    {#    var myreg=new RegExp("_$");#}
+    {#    if(myreg.test(db_user)){#}
+    {#        db_user=db_user.substring(0,15);#}
+    {#    }#}
+    {#    //账号授权#}
+    {#    $.ajax({#}
+    {#        type:'POST',#}
+    {#        url:'http://api.shawdo.com/api/admin/public/GrantAccountPrivilege',#}
+    {#        dataType:'json',#}
+    {#        async:false,#}
+    {#        data:{AccountName:db_user,DBName:db_name,DBDescription:""},#}
+    {#        success:function(data){#}
+    {#            $.ajax({#}
+    {#                type:'GET',#}
+    {#                url:data,#}
+    {#                dataType:'json',#}
+    {#                async:false,#}
+    {#                success:function(data1,status){#}
+    {#                    rds_error.push("账号授权成功"+"<br>");#}
+    {#                    layer.open({#}
+    {#                        title: '处理结果',#}
+    {#                        shadeClose:true,#}
+    {#                        content:#}
+    {#                           ""+rds_error,#}
+    {#                        end: function(index, layero){#}
+    {#                            setTimeout("window.location.reload()",1000);#}
+    {#                        }#}
+    {#                    });#}
+    {#                },error:function(jqXHR){#}
+    {#                    rds_error.push("账号创建失败"+jqXHR.responseJSON.Message+"<br>");#}
+    {#                    layer.open({#}
+    {#                        title: '处理结果',#}
+    {#                        shadeClose:true,#}
+    {#                        content:#}
+    {#                           ""+rds_error,#}
+    {#                        end: function(index, layero){#}
+    {#                            setTimeout("window.location.reload()",1000);#}
+    {#                        }#}
+    {#                    });#}
+    {#                }#}
+    {#            });#}
+    {#        }#}
+    {#    });#}
+    {#}#}
+    {##}
+    {#//添加到保存数据库队列#}
+	{#function AddSaveArray(api_table_name)#}
+	{#{#}
+	{#        var Item = [];#}
+	{#        Item[0]=api_table_name;#}
+	{#        SaveArray.push(Item);     //将当前请求添加到队列末尾#}
+	{#        if(SaveArray.length==1)  //如果请求队列里只有当前请求立即要求执行队列，如果有其他请求，那么就不要求执行队列#}
+	{#        {#}
+	{#            ExeSaveArray();#}
+	{#        }#}
+	{#}#}
+    {##}
+	{#//执行保存数据库队列里的顺序第一个的请求#}
+	{#function ExeSaveArray()#}
+	{#{#}
+    {##}
+	{#    if( SaveArray.length>0)  //如果队列里有请求执行 AJAX请求#}
+	{#    {#}
+	{#        var ArgItem = SaveArray[0];#}
+	{#        save_data(ArgItem[0]);#}
+	{#    }#}
+	{#}#}
+    {##}
+	{#//保存到数据库#}
+    {#function save_data(api_table_name){#}
+    {#    $.ajax({#}
+    {#        type:'POST',#}
+    {#        url:"/push_pod_cdn_group",#}
+    {#        dataType:'json',#}
+    {#        async:false,#}
+    {#        data:{pod_name:api_table_name,docker_ip:"103.44.90.149"},#}
+    {#        success:function(data_cdn){#}
+    {#            if(data_cdn.msg=="ok"){#}
+    {#                var res_data=data_cdn.data;#}
+    {#                var idc_ip=data_cdn.idc_ip;#}
+    {#                var web_arr=[];#}
+    {#                for(var key in res_data){#}
+    {#                    var other_name=res_data[key]['other_name'];#}
+    {#                    var other=other_name.split(',');#}
+    {#                    var web={#}
+    {#                        domain:res_data[key]['api_table_name'],#}
+    {#                        yuan_ip:res_data[key]['load_balance'],#}
+    {#                        other_domain:other#}
+    {#                    };#}
+    {#                    web_arr.push(web);#}
+    {#                }#}
+    {#                var post_data={#}
+    {#                        pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,#}
+    {#                        web:web_arr#}
+    {#                    };#}
+    {#                var json=JSON.stringify(post_data);#}
+    {#                console.log(json);#}
+    {#                var type=4;#}
+    {#                $.ajax({#}
+    {#                    type:'POST',#}
+    {#                    url:'http://api.shawdo.com/api/admin/public/saveDjingo',#}
+    {#                    dataType:'json',#}
+    {#                    async:false,#}
+    {#                    data:{data:json,type:type,idc_ip:idc_ip},#}
+    {#                    success:function(data2){#}
+    {#                        layer.msg(data2.msg);#}
+    {#                        SaveArray.shift();#}
+    {#                    }#}
+    {#                });#}
+    {#            }#}
+    {#        }#}
+    {#    });#}
+    {#}#}
+
+
+         {#$.ajax({#}
+         {#               type:'POST',#}
+         {#               url:"/save_cdn_group",#}
+         {#               dataType:'json',#}
+         {#               async:false,#}
+         {#               data:{web_id:1347,docker_ip:"103.44.90.149"},#}
+         {#               success:function(data1){#}
+         {#                   if(data1.msg=="ok"){#}
+         {#                       $.ajax({#}
+         {#                           type:'POST',#}
+         {#                           url:"/push_cdn_group",#}
+         {#                           dataType:'json',#}
+         {#                           async:false,#}
+         {#                           data:{web_id:1347,num:10},#}
+         {#                           success:function(data_cdn){#}
+         {#                               if(data_cdn.msg=="ok"){#}
+         {#                                   layer.msg("pod_cdn分组成功");#}
+         {#                                   var res_data=data_cdn.data;#}
+         {#                                   var idc_ip=data_cdn.idc_ip;#}
+         {#                                   var web_arr=[];#}
+         {#                                   for(var key in res_data){#}
+         {#                                       var other_name=res_data[key]['other_name'];#}
+         {#                                       var other=other_name.split(',');#}
+         {#                                       var web={#}
+         {#                                           domain:res_data[key]['api_table_name'],#}
+         {#                                           yuan_ip:res_data[key]['load_balance'],#}
+         {#                                           other_domain:other#}
+         {#                                       };#}
+         {#                                       web_arr.push(web);#}
+         {#                                   }#}
+         {#                                   var post_data={#}
+         {#                                           pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,#}
+         {#                                           web:web_arr#}
+         {#                                       };#}
+         {#                                   var json=JSON.stringify(post_data);#}
+                                            {#console.log(json);#}
+         {#                                   var type=4;#}
+         {#                                   $.ajax({#}
+         {#                                       type:'POST',#}
+         {#                                       url:'http://api.shawdo.com/api/admin/public/saveDjingo',#}
+         {#                                       dataType:'json',#}
+         {#                                       async:false,#}
+         {#                                       data:{data:json,type:type,idc_ip:idc_ip},#}
+         {#                                       success:function(data2){#}
+         {#                                           layer.msg(data2.msg);#}
+         {#                                       }#}
+         {#                                   });#}
+         {#                               }#}
+         {#                           }#}
+         {#                       });#}
+         {#                   }#}
+         {#               }#}
+         {#           });#}
+
+</script>

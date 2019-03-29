@@ -1,0 +1,244 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                站点信息：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-form-text">
+                    <label class="layui-form-label">域名</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="多个域名换行隔开" class="layui-textarea" id="api_table_name"></textarea>
+                    </div>
+                    <div class="layui-form-mid" style="color:red">输入要建立数据库的网站域名.例：www.baidu.com。注意最后一个域名之后不能带有换行，否则最后界面会一直加载，因为换行也算作一个空数据。</div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">数据库</label>
+                <div class="layui-input-inline">
+                    <select  id="db_type">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="db_pass" class="layui-input" value="qqqAAA0130">
+                </div>
+                <div class="layui-form-mid" style="color:red">（必填）</div>
+            </div>
+
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加数据库</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var loading="";
+    $("#ok").click(function () {
+        loading=layer.load(1, {shade: [0.8, '#393D49']});
+        var db_pass=$("#db_pass").val();
+        var url_str = $("#api_table_name").val();
+        var url_arr = url_str.split('\n');
+        for(var i=0;i<url_arr.length;i++){
+            var url=url_arr[i]+"";
+            url = url.replace(/\s+/g,"");
+            queue(url,db_pass);
+        }
+    });
+
+    layui.use(['form'], function() {
+        var form = layui.form;
+
+        $.ajax({
+            type: 'POST',
+            url: '/server_rds_data',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['ins_id'] + "</option>";
+                }
+                $("#db_type").html(str);
+                form.render();
+            }
+        });
+
+    });
+
+
+    var host_name_arr=[];
+	function queue(url,db_pass)
+	{
+        var str=url;
+        str=str.replace(/^www\./,"");
+        str=str.replace(/^m\./,"");
+        str=str.replace(/\./g,"_");
+        str=str.replace(/\-/g,"");
+        str="db_"+str;
+        //大写强转小写
+        str=str.toLowerCase();
+        var db_name=str;
+        var db_user=str.substring(0,16);
+        db_user=db_user.replace(/\-/g,"");
+        db_user=db_user.toLowerCase();
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        var ins_id=$("#db_type").find("option:selected").text();
+        var Item = [];
+        Item[0]=db_user;
+        Item[1]=db_name;
+        Item[2]=db_pass;
+        Item[3]=url;
+        Item[4]=ins_id;
+        host_name_arr.push(Item);
+        if(host_name_arr.length==1)
+        {
+            Exehostnamearr();
+        }
+
+	}
+
+	function Exehostnamearr()
+	{
+        if(host_name_arr.length==0){
+            layer.close(loading);
+            if(rds_error.length > 0){
+                layer.open({
+                    title: '创建结果',
+                    shadeClose:true,
+                    content:
+                       '数据库创建失败的域名（'+rds_error.length+'）:'+rds_error,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }else{
+                layer.msg("创建成功");
+            }
+        }
+	    if( host_name_arr.length>0)
+	    {
+	        var ArgItem = host_name_arr[0];
+	        create_db(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4]);
+	    }
+	}
+
+    var rds_error=[];
+    //RDS操作
+    function create_db(db_user,db_name,db_pass,url,ins_id){
+        $.ajax({
+            type:'POST',
+            url:'/get_webcf',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:url},
+            success:function(data){
+                $.ajax({
+                    type:'POST',
+                    url:'/batch_update_rds',
+                    dataType:'json',
+                    async:false,
+                    data:{web_id:data[0].id,type:$("#db_type").val(),dbname:db_name,dbuser:db_user,dbpass:db_pass,server_rds_id:$("#db_type").val()},
+                    success:function(data){
+
+                    }
+                });
+            }
+        });
+
+        //创建数据库
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/CreateDatabase',
+            dataType:'json',
+            async:false,
+            data:{DBName:db_name,DBDescription:"创建数据库"+db_name,DBInstanceId:ins_id},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    success:function(data1,status){
+
+                    },error:function(jqXHR){
+                        rds_error.push(url+"数据库创建失败");
+                    }
+                });
+            }
+        });
+        //创建账号
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/CreateAccount',
+            dataType:'json',
+            async:false,
+            data:{AccountName:db_user,AccountPassword:db_pass,AccountDescription:"",DBInstanceId:ins_id},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    success:function(data1,status){
+
+                    },error:function(jqXHR){
+                        {#console.log(jqXHR.responseJSON.Message);#}
+                        rds_error.push(url+"账号创建失败");
+                    }
+                });
+            }
+        });
+        setTimeout("ghost('"+db_user+"','"+db_name+"','"+url+"','"+ins_id+"')","5000");//3秒后给账号权限，防止运行太快导致授权失败。
+    }
+    function ghost(db_user,db_name,url,ins_id){
+        //账号授权
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/GrantAccountPrivilege',
+            dataType:'json',
+            async:false,
+            data:{AccountName:db_user,DBName:db_name,DBDescription:"",DBInstanceId:ins_id},
+            success:function(data){
+                $.ajax({
+                    type:'GET',
+                    url:data,
+                    dataType:'json',
+                    async:false,
+                    success:function(data1,status){
+                        host_name_arr.shift();
+                        Exehostnamearr();
+                    },error:function(jqXHR){
+                        rds_error.push(url+"账号授权失败"+"<br>");
+                        host_name_arr.shift();
+                        Exehostnamearr();
+                        if(rds_error.length > 0){
+                            layer.open({
+                                title: '创建结果',
+                                shadeClose:true,
+                                content:
+                                   '数据库创建失败的域名（'+rds_error.length+'）:'+rds_error,
+                                yes: function(index, layero){
+                                    setTimeout("window.location.reload()",1000);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+
+
+</script>

@@ -1,0 +1,138 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                新增任务计划：
+            </blockquote>
+
+            <div class="main">
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">计划名称</label>
+                    <div class="layui-input-block">
+                      <input id="task_name" type="text" name="task_name" autocomplete="off" placeholder="" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">开始日期</label>
+                    <div class="layui-input-block">
+                      <input id="start_time" type="datetime-local" name="start_time" autocomplete="off" placeholder="" class="layui-input" style="width: 200px;">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">执行周期</label>
+                    <div class="layui-input-block">
+                      <input id="cycle_time" type="text" name="cycle_time" autocomplete="off" placeholder="请输入执行周期 /s为单位" class="layui-input">
+                    </div>
+                  </div>  
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">执行方法</label>
+                    <div class="layui-input-block">
+                      <input id="task_fun" type="text" name="task_fun" autocomplete="off" placeholder="请输入执行方法" class="layui-input">
+                    </div>
+                  </div>  
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                      <input id="note" type="text" name="note" autocomplete="off" placeholder="请输入备注" class="layui-input">
+                    </div>
+                  </div>
+
+
+                 <div class="layui-form-item">
+                    <button id="submit" class="layui-btn" lay-submit="" lay-filter="demo2">提交</button>
+                  </div>                                                                                      
+
+            </div>
+
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script type="text/javascript">
+ function tip(name){
+    layer.open({
+      title: '提示',
+      content: name
+    });     
+}   
+    $(function(){
+        $('#submit').on('click',function(){
+            var task_name = $('#task_name').val();
+            var start_time = $('#start_time').val();
+            var cycle_time = $('#cycle_time').val();
+            var task_fun = $('#task_fun').val();
+            var note = $('#note').val();
+            var dataArr = ['计划名称','开始时间','执行周期','执行方法','备注'];
+            var arrIndex = ['task_name','start_time','cycle_time','task_fun','note'];
+            var data = {'task_name':task_name,'start_time':start_time,'cycle_time':cycle_time,'task_fun':task_fun,'note':note};
+            for(var key in data){
+                if(data[key] == ''){
+                    var n = arrIndex.indexOf(key);
+                    tip(dataArr[n]+'不能为空');
+                    return;
+                }
+            }
+           // var loading=layer.load(1, {shade: [0.8, '#393D49']});
+            $.ajax({
+                url:'/add_task_list',
+                type:'POST',
+                data:data,
+                success:function(res){
+                     layer.msg("添加成功");
+                setTimeout("window.location.reload()",1000);
+                }
+            })
+        })
+    })
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

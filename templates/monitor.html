@@ -1,0 +1,45 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                容器脚本：
+            </blockquote>
+            <table id="demo" lay-filter="demo"></table>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    $.ajax({
+        type:'POST',
+        url:'http://api.shawdo.com/api/admin/pyApi/cycle_weblist',
+        dataType:'json',
+        success:function(data){
+            console.log(data);
+        }
+    });
+    layui.use(['form','table'], function(){
+        var table = layui.table;
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: 'http://api.shawdo.com/api/admin/pyApi/cycle_weblist',
+            page: true,
+            autoSort: false,
+            cols: [[ //表头
+                    {field: 'content', title: '服务', fixed: 'left'},
+                    {field: 'max_time', title:"脚本最近执行日期", fixed: 'left' },
+                    {field: 'min_time', title:"最小值", fixed: 'left' },
+                    {field: 'time_cycle', title:"生命周期", fixed: 'left'},
+                    {field: 'contrast', title:"差值", fixed: 'left'}
+                ]]
+        });
+    });
+</script>

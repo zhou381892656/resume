@@ -1,0 +1,207 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                任务列表：<span style="color: green;">绿色为24小时内有更新</span>，<span style="color: red;">红色为24小时内未更新</span>
+            </blockquote>
+            <!--<div class="layui-form-item">-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="layui-input-inline">-->
+                        <!--<input type="text" id="link_url" placeholder="请输入URL" class="layui-input">-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="demoTable">-->
+                        <!--<button class="layui-btn" data-type="reload" id="search">查询</button>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form','table'], function(){
+         var table = layui.table;
+         var form = layui.form;
+         var $ = layui.$, active = {
+            reload: function(){ //获取选中数据
+                table.reload('url_list', {
+                    url: '/zzl_search_task',
+                    method: 'POST',
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        url:$("#link_url").val()
+                    }
+                });
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: 'http://api.shawdo.com/api/admin/PyApi/get_mon_list',
+            page: true,
+            id:'url_list',
+            cols: [[ //表头
+                {field: 'record_id', title: 'id',sort: true, width:50, fixed: 'left'},
+                {field: 'server_id', title: '服务器ip',sort: true, width:"", fixed: 'left'},
+               // {field: 'up_time7', title: '404监控', width:"",sort: true,fixed: 'left'},
+                  {fixed: 'left', title:"404监控", width:"", align:'center', templet: function(d){
+
+                    if(d.show7 ==1 ){
+                        return "<span style='color:red;'>"+d.up_time7+"   />24h</span>";
+                    }
+                    else if(d.up_time7){
+                        return "<span style='color: green;'>"+d.up_time7+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+
+               // {field: 'up_time8', title: '删除缓存', width:"",sort: true,fixed: 'left'},
+                    {fixed: 'left', title:"删除缓存", width:"", align:'center', templet: function(d){
+
+                    if(d.show8 ==1 ){
+                        return "<span style='color:red;'>"+d.up_time8+"   />24h</span>";
+                    }
+                    else if(d.up_time8){
+                        return "<span style='color: green;'>"+d.up_time8+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+
+            //    {field: 'up_time4', title: '创建CDN站', width:"",sort: true,fixed: 'left'},
+
+                          {fixed: 'left', title:"创建CDN站", width:"", align:'center', templet: function(d){
+
+                    if(d.show4 ==1 ){
+                        return "<span style='color:red;'>"+d.up_time4+"   />24h</span>";
+                    }
+                    else if(d.up_time4){
+                        return "<span style='color: green;'>"+d.up_time4+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+
+              //  {field: 'up_time6', title: '创建网站程序', width:"",sort: true,fixed: 'left'},
+                 {fixed: 'left', title:"创建网站程序", width:"", align:'center', templet: function(d){
+
+                    if(d.show6 ==1 ){
+                        return "<span style='color:red;'>"+d.up_time6+"   />24h</span>";
+                    }
+                    else if(d.up_time6){
+                        return "<span style='color: green;'>"+d.up_time6+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+
+
+               // {field: 'up_time3', title: '创建源网站', width:"",sort: true,fixed: 'left'},
+                           {fixed: 'left', title:"创建源网站", width:"", align:'center', templet: function(d){
+
+                    if(d.show3 ==1 ){
+
+                        return "<span style='color:red;'>"+d.up_time3+"   />24h</span>";
+                    }
+                    else if(d.up_time3){
+                        return "<span style='color: green;'>"+d.up_time3+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+
+
+                {fixed: 'left', title:"删除目录缓存", width:"", align:'center', templet: function(d){
+
+                    if(d.show9 ==1 ){
+                        return "<span style='color:red;'>"+d.up_time3+"   />24h</span>";
+                    }
+                    else if(d.up_time9){
+                        return "<span style='color: green;'>"+d.up_time3+"</span>";
+                    }
+                     else{
+                         return "";
+                    }
+
+
+                    }},
+                //{field: 'up_time9', title: '删除目录缓存', width:"",sort: true,fixed: 'left'},
+               // {fixed: 'left', title:"更新时间", width:200, align:'center', toolbar: '#times'},
+
+                //  {fixed: 'left', title:"更新时间", width:300, align:'center', templet: function(d){
+                // // return layui.laytpl.toDateString(d.up_time);
+                //  return layui.util.toDateString(d.up_time*1000, 'yyyy-MM-dd HH:mm:ss')
+                //     }},
+
+                 // {fixed: 'left', title:"时间间隔/s", width:"", align:'center', templet: function(d) {
+                 //         // return layui.laytpl.toDateString(d.up_time);
+                 //
+                 //         return parseInt((new Date().getTime() / 1000) - (d.up_time));
+                 //
+                 //
+                 //         //            setInterval(refreshQuery,1000);
+                 //         //            /* 刷新查询 */
+                 //         //            function refreshQuery() {
+                 //         //                // $("#mainTable").datagrid('reload',null);
+                 //         //                var time = parseInt((new Date().getTime() / 1000) - (d.up_time));
+                 //         //                //  return parseInt((new Date().getTime()/1000)-(d.up_time));
+                 //         //                 //console.log(1);
+                 //         //                //return 5;
+                 //         //               // console.log(1);
+                 //         //                return out(time);
+                 //         //            }
+                 //         //            function  out(time){
+                 //         //               return time;
+                 //         //            }
+                 //         //
+                 //         //            return time;
+                 //         // }
+                 //     }},
+
+               // {field: 'interval', title: '时间间隔',sort: true, fixed: 'left'},
+                {fixed: 'right', title:"操作", width:100, align:'center', toolbar: '#barDemo'},
+            ]]
+        });
+    });
+</script>
+    <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-xs" lay-event="start">测试监控</a>
+                    <!--<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>-->
+                     <!--<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="up">更新数量</a>-->
+                </script>
+
+   <script type="text/html" id="times">
+             {{ d.id }}
+    </script>

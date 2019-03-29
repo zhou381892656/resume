@@ -1,0 +1,121 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                任务列表：
+            </blockquote>
+            <a href="/dr_arcitle/{{ url }}"  class="layui-btn layui-btn-radius" >导入文章</a>
+            <!--<div class="layui-form-item">-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="layui-input-inline">-->
+                        <!--<input type="text" id="link_url" placeholder="请输入URL" class="layui-input">-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="layui-inline">-->
+                    <!--<div class="demoTable">-->
+                        <!--<button class="layui-btn" data-type="reload" id="search">查询</button>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form','table'], function(){
+         var table = layui.table;
+         var form = layui.form;
+         var $ = layui.$, active = {
+            reload: function(){ //获取选中数据
+                table.reload('url_list', {
+                    url: '/zzl_search_task',
+                    method: 'POST',
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        url:$("#link_url").val()
+                    }
+                });
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: "http://120.79.150.193:5000/debug/get_list",
+            page: true,
+          //执行重载
+
+        where: {
+
+              item_id:"{{url}}"
+          },
+
+            id:'url_list',
+            cols: [[ //表头
+                {field: 'article_id', title: 'id',sort: true, width:"", fixed: 'left'},
+                {field: 'title', title: '标题',sort: true, width:"", fixed: 'left',templet: function(d){
+                    return"<a href='/show_article/"+d.article_id+"_{{url}}'>"+d.title+"</a>";
+
+                    }},
+                // {field: 'note', title: '来源', width:400,sort: true,fixed: 'left'},
+               // {fixed: 'left', title:"更新时间", width:200, align:'center', toolbar: '#times'},
+
+                 {fixed: 'left', title:"更新时间", width:"", align:'center', templet: function(d){
+                // return layui.laytpl.toDateString(d.up_time);
+                         return '';
+                //return layui.util.toDateString(d.up_time*1000, 'yyyy-MM-dd HH:mm:ss')
+                    }},
+
+              //   {fixed: 'left', title:"时间间隔/s", width:"", align:'center', templet: function(d) {
+                         // return layui.laytpl.toDateString(d.up_time);
+//
+                 //        return parseInt((new Date().getTime() / 1000) - (d.up_time));
+
+
+                         //            setInterval(refreshQuery,1000);
+                         //            /* 刷新查询 */
+                         //            function refreshQuery() {
+                         //                // $("#mainTable").datagrid('reload',null);
+                         //                var time = parseInt((new Date().getTime() / 1000) - (d.up_time));
+                         //                //  return parseInt((new Date().getTime()/1000)-(d.up_time));
+                         //                 //console.log(1);
+                         //                //return 5;
+                         //               // console.log(1);
+                         //                return out(time);
+                         //            }
+                         //            function  out(time){
+                         //               return time;
+                         //            }
+                         //
+                         //            return time;
+                         // }
+                   //  }},
+
+               // {field: 'interval', title: '时间间隔',sort: true, fixed: 'left'},
+                //{fixed: 'right', title:"操作", width:200, align:'center', toolbar: '#barDemo'},
+            ]]
+        });
+    });
+</script>
+    <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-xs" lay-event="start">测试监控</a>
+                    <!--<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>-->
+                     <!--<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="up">更新数量</a>-->
+                </script>
+
+   <script type="text/html" id="times">
+             {{ d.id }}
+    </script>

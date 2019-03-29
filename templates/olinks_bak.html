@@ -1,0 +1,860 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加内链：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-form-text layui-col-xs5">
+                    <label class="layui-form-label">源站点</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="多个站点换行隔开" class="layui-textarea" id="yuan_url"></textarea>
+                    </div>
+                </div>
+                <div class="layui-inline layui-form-text layui-col-xs5">
+                    <label class="layui-form-label">投放链接</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="一组链接的格式为     http:xxx.xxx.xxx||IP||关键词      多组投放链接换行隔开。" class="layui-textarea" id="url"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-col-xs4">
+                    <label class="layui-form-label">分配方式</label>
+                    <div class="layui-input-block">
+                         <select  id="type"  lay-filter="type_select">
+                            <option value="1">随机分配</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline  layui-col-md4">
+                    <label class="layui-form-label">分配链接</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="nums" placeholder="随机分配投放链接数量" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline layui-form-text layui-col-md2">
+                    <button class="layui-btn layui-btn-radius layui-btn-danger" id="yz">检测</button>
+                </div>
+            </div>
+
+            <div class="layui-form-item layui-col-xs10" pane>
+                <label class="layui-form-label">排除规则</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" id="pc" title="排除C段" checked="">
+                    <input type="checkbox" id="sl" title="数量小于" lay-filter="pc_type">
+                    <input type="text" id="max_nums" disabled="disabled"><span style="color:red;margin-left: 20px;">源站链接数量大于此设置则不投放链接</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-col-xs3">
+                    <label class="layui-form-label">投放页面</label>
+                    <div class="layui-input-block">
+                         <select  id="tf_page"  lay-filter="tf_select">
+                            <option value="1">首页</option>
+                            <option value="2">栏目页</option>
+                            <option value="3">内容页</option>
+                            <option value="4">其他页</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline layui-col-xs3">
+                    <label class="layui-form-label">投放区域</label>
+                    <div class="layui-input-block">
+                        <select  id="tf_block">
+                            <option value="1">块1</option>
+                            <option value="2">块2</option>
+                            <option value="3">块3</option>
+                            <option value="4">块4</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline layui-col-xs4">
+                    <label class="layui-form-label">投放数量</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="tf_nums" placeholder="在随机个数量的页面投放链接(首页不需要填写)" class="layui-input layui-disabled" disabled>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius layui-btn-disabled" id="ok" disabled="disabled">确认投放</button>
+            </div>
+            <div class="layui-footer">
+                检查完成后方可提交
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    //消息队列待请求数据
+    var yuan_arr = [];
+    var yuan_new_arr = [];
+    var url_new_arr = [];
+
+    layui.use(['form'], function(){
+        var form = layui.form;
+        //根据单选框选择情况切换样式
+        form.on('checkbox(pc_type)', function(data){
+            if(data.elem.checked){
+                $('#max_nums').removeAttr("disabled");
+            }else{
+                 $("#max_nums").attr("disabled","disabled");
+            }
+        });
+        form.on('select(tf_select)', function(data){
+            if(data.value=="1"){
+                $("#tf_nums").attr("disabled","disabled");
+                $("#tf_nums").addClass("layui-disabled");
+            }else if(data.value=="2"){
+                $('#tf_nums').removeAttr("disabled");
+                $('#tf_nums').removeClass("layui-disabled");
+            }else if(data.value=="3"){
+                $('#tf_nums').removeAttr("disabled");
+                $('#tf_nums').removeClass("layui-disabled");
+            }else if(data.value=="4"){
+                $('#tf_nums').removeAttr("disabled");
+                $('#tf_nums').removeClass("layui-disabled");
+            }
+        });
+    });
+    $("#yz").click(function () {
+        var yuan_url=$("#yuan_url").val();
+        var url=$("#url").val();
+        yuan_url=yuan_url.split('\n');
+        url=url.split('\n');
+        if(yuan_url==''){
+            layer.msg("源站点不能为空");
+            return;
+        }
+        if(url==''){
+            layer.msg("投放站点不能为空");
+            return;
+        }
+        //验证源站点
+        for(var i=0;i<yuan_url.length;i++){
+            add_yuan_arr(yuan_url[i]);
+        }
+        //验证源站点end
+        //验证投放链接格式是否正确
+        for(var j=0;j<url.length;j++){
+            //验证格式是否正确的正则
+            var myreg=new RegExp("((http://|https://)(.*?)\\|\\|(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|[1-9])\\.(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\.(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\.(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\|\\|([\u4e00-\u9fa5]*))");
+            if(myreg.test(url[j])){
+                url_new_arr.push(url[j]);
+            }
+        }
+        //验证投放链接格式是否正确end
+    });
+
+
+
+	function add_yuan_arr(url)
+	{
+	        var Item = [];
+	        Item[0]=url;
+	        yuan_arr.push(Item);
+	        if(yuan_arr.length==1)
+	        {
+	            Exeyuanarr();
+	        }
+	}
+
+
+	function Exeyuanarr()
+	{
+	    if(yuan_arr.length==0){
+           layer.msg("验证完成");
+           $("#yz").attr("disabled","disabled");
+           $('#yz').addClass("layui-btn-disabled");
+           $('#ok').removeClass("layui-btn-disabled");
+           $('#ok').removeAttr("disabled");
+       }
+	    if( yuan_arr.length>0)
+	    {
+	        var ArgItem = yuan_arr[0];
+	        yz_yuan_arr(ArgItem[0]);
+	    }
+	}
+
+    //验证源站是否有webcfid将存在id的数据存到yuan_new_arr
+    function yz_yuan_arr(api_table_name){
+	    $.ajax({
+            type:'POST',
+            url:'/yz_webcfid',
+            dataType:'json',
+            data:{api_table_name:api_table_name},
+            success:function(data){
+               if(data.msg=="ok"){
+                   yuan_new_arr.push([data.webcf_id,api_table_name]);
+                   yuan_arr.shift();
+                   Exeyuanarr();
+               }else if(data.msg=="no"){
+                   yuan_arr.shift();
+                   Exeyuanarr();
+               }
+            }
+        });
+    }
+
+
+
+    /*
+    ******************
+    **提交时的排除规则
+    ******************
+    */
+    var cache_count="";
+    var y_page_url="";
+    $("#ok").click(function () {
+        $('#ok').addClass("layui-btn-disabled");
+        $('#ok').attr("disabled","disabled");
+        if($("#nums").val()==''||$("#nums").val()=="0"){
+           layer.msg("抽取数量必须存在且大于0");
+           return;
+        }
+        //选择了排除c段,未选择数量小于
+        if($('#pc').prop('checked')&&!$('#sl').prop('checked')){
+            //投放链接抽取数量不足的情况
+            if(url_new_arr.length < $("#nums").val()){
+                layer.msg("可以投放的链接小于抽取数量，请减少抽取数量或者增加可投放的链接");
+                return;
+            }else{
+                var rcount=$("#nums").val();
+                //遍历源站点
+                for(var k=0;k<yuan_new_arr.length;k++){
+                    var y_webcf_id=yuan_new_arr[k][0];
+                    var tf_page=$("#tf_page").val();
+                    var tf_block=$("#tf_block").val();
+                    var post_new_arr1=[];
+
+                    //随机投放rcount条链接
+                    getRandomArray(url_new_arr,rcount);
+                    post_new_arr1=random_arr;
+                    console.log(post_new_arr1);
+                    var host_name=yuan_new_arr[k][1];
+                    var tf_nums=$("#tf_nums").val();
+                    //首页禁止填写，固默认为1
+                    if(tf_nums==""){
+                        tf_nums=1;
+                    }
+                    //获取所有符合条件的投放页面
+                    get_all_urls_data(host_name,tf_page);
+                    //根据投放数量判断
+                    var tf_count = return_data.count;
+                    var tf_data = return_data.data;
+                    //数据库中的结果小于投放数量时，直接给所有投放
+                    if(tf_count <= $("#tf_nums").val()){
+                        console.log('if');
+                        console.log(tf_data.length);
+                        for(var a=0;a<tf_data.length;a++){
+                            y_page_url=tf_random[a]['page_url'];
+                            var content="";
+                            //遍历rcount条数据
+                            for(var m=0;m<post_new_arr1.length;m++){
+                                var arr_all=[];
+                                arr_all=post_new_arr1[m].split('||');
+                                var tf_url=arr_all[0];
+                                var tf_ip=arr_all[1];
+                                var tf_key=arr_all[2];
+                                //获取匹配IP的C段
+                                //排除C段相同的值
+                                yz_cdn_ip(tf_ip,y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                if(bool){
+                                    content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                }
+                                //排除C段相同的值end
+                                cache_count = m;
+                            }
+                            //更新源站缓存
+                            var crc32=CRC32.str(y_page_url);
+                            crc32=sprintf(crc32);
+                            get_yuan_ip(host_name);
+                            add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+
+                        }
+                    }else{
+                        //数据库中符合条件的页面数量大于投放数量，则将投放链接随机投放至指定数量的页面
+                        getRandomArray(return_data.data,$("#tf_nums").val());
+                        var tf_random=random_arr;
+                        console.log('else');
+                        console.log(tf_random);
+                        for(var a=0;a<tf_random.length;a++){
+                            y_page_url=tf_random[a]['page_url'];
+                            var content="";
+                            //遍历rcount条数据
+                            console.log(y_page_url);
+                            for(var m=0;m<post_new_arr1.length;m++){
+                                var arr_all=[];
+                                arr_all=post_new_arr1[m].split('||');
+                                var tf_url=arr_all[0];
+                                var tf_ip=arr_all[1];
+                                var tf_key=arr_all[2];
+                                //获取匹配IP的C段
+                                //排除C段相同的值
+                                yz_cdn_ip(tf_ip,y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                if(bool){
+                                    content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                }
+                                //排除C段相同的值end
+                                cache_count = m;
+                            }
+                            //更新源站缓存
+                            var crc32=CRC32.str(y_page_url);
+                            crc32=sprintf(crc32);
+                            get_yuan_ip(host_name);
+                            add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+                        }
+                    }
+                }
+                Exepostdata();
+            }
+        //未选择排除C段，但选择了数量小于
+        }else if(!$('#pc').prop('checked')&&$('#sl').prop('checked')){
+            var max_nums=$("#max_nums").val();
+            //投放链接抽取数量不足的情况
+            if(url_new_arr.length < $("#nums").val()){
+                layer.msg("可以投放的链接小于抽取数量，请减少抽取数量或者增加可投放的链接");
+                return;
+            }else {
+                var rcount = $("#nums").val();
+
+                //遍历源站点
+                for (var k = 0; k < yuan_new_arr.length; k++) {
+                    var y_webcf_id = yuan_new_arr[k][0];
+                    yz_sl(y_webcf_id);
+                    if (yz_count < max_nums) {
+                        var y_webcf_id=yuan_new_arr[k][0];
+                        var tf_page=$("#tf_page").val();
+                        var tf_block=$("#tf_block").val();
+                        var post_new_arr1=[];
+                        //随机投放rcount条链接
+                        getRandomArray(url_new_arr,rcount);
+                        post_new_arr1=random_arr;
+                        console.log(post_new_arr1);
+                        var host_name=yuan_new_arr[k][1];
+                        var tf_nums=$("#tf_nums").val();
+                        //首页禁止填写，固默认为1
+                        if(tf_nums==""){
+                            tf_nums=1;
+                        }
+                        //获取所有符合条件的投放页面
+                        get_all_urls_data(host_name,tf_page);
+                        //根据投放数量判断
+                        var tf_count = return_data.count;
+                        var tf_data = return_data.data;
+                        //数据库中的结果小于投放数量时，直接给所有投放
+                        if(tf_count <= $("#tf_nums").val()){
+                            console.log('if');
+                            console.log(tf_data.length);
+                            for(var a=0;a<tf_data.length;a++){
+                                y_page_url=tf_random[a]['page_url'];
+                                var content="";
+                                //遍历rcount条数据
+                                for(var m=0;m<post_new_arr1.length;m++){
+                                    var arr_all=[];
+                                    arr_all=post_new_arr1[m].split('||');
+                                    var tf_url=arr_all[0];
+                                    var tf_ip=arr_all[1];
+                                    var tf_key=arr_all[2];
+                                    add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                    cache_count = m;
+                                }
+                                //更新源站缓存
+                                var crc32=CRC32.str(y_page_url);
+                                crc32=sprintf(crc32);
+                                get_yuan_ip(host_name);
+                                add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+
+                            }
+                        }else{
+                            //数据库中符合条件的页面数量大于投放数量，则将投放链接随机投放至指定数量的页面
+                            getRandomArray(return_data.data,$("#tf_nums").val());
+                            var tf_random=random_arr;
+                            console.log('else');
+                            console.log(tf_random);
+                            for(var a=0;a<tf_random.length;a++){
+                                y_page_url=tf_random[a]['page_url'];
+                                var content="";
+                                //遍历rcount条数据
+                                console.log(y_page_url);
+                                for(var m=0;m<post_new_arr1.length;m++){
+                                    var arr_all=[];
+                                    arr_all=post_new_arr1[m].split('||');
+                                    var tf_url=arr_all[0];
+                                    var tf_ip=arr_all[1];
+                                    var tf_key=arr_all[2];
+                                    add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                    content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                    cache_count = m;
+                                }
+                                //更新源站缓存
+                                var crc32=CRC32.str(y_page_url);
+                                crc32=sprintf(crc32);
+                                get_yuan_ip(host_name);
+                                add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+                            }
+                        }
+                    }
+                }
+                Exepostdata();
+            }
+        //选择了排除C段也选择了数量小于
+        }else if($('#pc').prop('checked')&&$('#sl').prop('checked')){
+            var max_nums=$("#max_nums").val();
+            //投放链接抽取数量不足的情况
+            if(url_new_arr.length < $("#nums").val()){
+                layer.msg("可以投放的链接小于抽取数量，请减少抽取数量或者增加可投放的链接");
+                return;
+            }else{
+                var rcount=$("#nums").val();
+
+                //遍历源站点
+                for(var k=0;k<yuan_new_arr.length;k++){
+                    var y_webcf_id=yuan_new_arr[k][0];
+                    yz_sl(y_webcf_id);
+                    if(yz_count<max_nums){
+                        var y_webcf_id=yuan_new_arr[k][0];
+                        var tf_page=$("#tf_page").val();
+                        var tf_block=$("#tf_block").val();
+                        var post_new_arr1=[];
+
+                        //随机投放rcount条链接
+                        getRandomArray(url_new_arr,rcount);
+                        post_new_arr1=random_arr;
+                        console.log(post_new_arr1);
+                        var host_name=yuan_new_arr[k][1];
+                        var tf_nums=$("#tf_nums").val();
+                        //首页禁止填写，固默认为1
+                        if(tf_nums==""){
+                            tf_nums=1;
+                        }
+                        //获取所有符合条件的投放页面
+                        get_all_urls_data(host_name,tf_page);
+                        //根据投放数量判断
+                        var tf_count = return_data.count;
+                        var tf_data = return_data.data;
+                        //数据库中的结果小于投放数量时，直接给所有投放
+                        if(tf_count <= $("#tf_nums").val()){
+                            console.log('if');
+                            console.log(tf_data.length);
+                            for(var a=0;a<tf_data.length;a++){
+                                y_page_url=tf_random[a]['page_url'];
+                                var content="";
+                                //遍历rcount条数据
+                                for(var m=0;m<post_new_arr1.length;m++){
+                                    var arr_all=[];
+                                    arr_all=post_new_arr1[m].split('||');
+                                    var tf_url=arr_all[0];
+                                    var tf_ip=arr_all[1];
+                                    var tf_key=arr_all[2];
+                                    //获取匹配IP的C段
+                                    //排除C段相同的值
+                                    yz_cdn_ip(tf_ip,y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                    if(bool){
+                                        content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                    }
+                                    //排除C段相同的值end
+                                    cache_count = m;
+                                }
+                                //更新源站缓存
+                                var crc32=CRC32.str(y_page_url);
+                                crc32=sprintf(crc32);
+                                get_yuan_ip(host_name);
+                                add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+
+                            }
+                        }else{
+                            //数据库中符合条件的页面数量大于投放数量，则将投放链接随机投放至指定数量的页面
+                            getRandomArray(return_data.data,$("#tf_nums").val());
+                            var tf_random=random_arr;
+                            console.log('else');
+                            console.log(tf_random);
+                            for(var a=0;a<tf_random.length;a++){
+                                y_page_url=tf_random[a]['page_url'];
+                                var content="";
+                                //遍历rcount条数据
+                                console.log(y_page_url);
+                                for(var m=0;m<post_new_arr1.length;m++){
+                                    var arr_all=[];
+                                    arr_all=post_new_arr1[m].split('||');
+                                    var tf_url=arr_all[0];
+                                    var tf_ip=arr_all[1];
+                                    var tf_key=arr_all[2];
+                                    //获取匹配IP的C段
+                                    //排除C段相同的值
+                                    yz_cdn_ip(tf_ip,y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                    if(bool){
+                                        content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                    }
+                                    cache_count = m;
+                                    //排除C段相同的值end
+                                }
+                                //更新源站缓存
+                                var crc32=CRC32.str(y_page_url);
+                                crc32=sprintf(crc32);
+                                get_yuan_ip(host_name);
+                                add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+                            }
+                        }
+                    }
+                }
+                Exepostdata();
+            }
+        //没有选排除C段，也没有选择数量小于
+        }else if(!$('#pc').prop('checked')&&!$('#sl').prop('checked')){
+            //投放链接抽取数量不足的情况
+            if(url_new_arr.length < $("#nums").val()){
+                layer.msg("可以投放的链接小于抽取数量，请减少抽取数量或者增加可投放的链接");
+                return;
+            }else{
+                var rcount=$("#nums").val();
+
+                //遍历源站点
+                for(var k=0;k<yuan_new_arr.length;k++){
+                     var y_webcf_id=yuan_new_arr[k][0];
+                    var tf_page=$("#tf_page").val();
+                    var tf_block=$("#tf_block").val();
+                    var post_new_arr1=[];
+                    //随机投放rcount条链接
+                    getRandomArray(url_new_arr,rcount);
+                    post_new_arr1=random_arr;
+                    console.log(post_new_arr1);
+                    var host_name=yuan_new_arr[k][1];
+                    var tf_nums=$("#tf_nums").val();
+                    //首页禁止填写，固默认为1
+                    if(tf_nums==""){
+                        tf_nums=1;
+                    }
+                    //获取所有符合条件的投放页面
+                    get_all_urls_data(host_name,tf_page);
+                    //根据投放数量判断
+                    var tf_count = return_data.count;
+                    var tf_data = return_data.data;
+                    //数据库中的结果小于投放数量时，直接给所有投放
+                    if(tf_count <= $("#tf_nums").val()){
+                        console.log('if');
+                        console.log(tf_data.length);
+                        for(var a=0;a<tf_data.length;a++){
+                            y_page_url=tf_random[a]['page_url'];
+                            var content="";
+                            //遍历rcount条数据
+                            for(var m=0;m<post_new_arr1.length;m++){
+                                var arr_all=[];
+                                arr_all=post_new_arr1[m].split('||');
+                                var tf_url=arr_all[0];
+                                var tf_ip=arr_all[1];
+                                var tf_key=arr_all[2];
+                                add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                cache_count = m;
+                            }
+                            //更新源站缓存
+                            var crc32=CRC32.str(y_page_url);
+                            crc32=sprintf(crc32);
+                            get_yuan_ip(host_name);
+                            add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+
+                        }
+                    }else{
+                        //数据库中符合条件的页面数量大于投放数量，则将投放链接随机投放至指定数量的页面
+                        getRandomArray(return_data.data,$("#tf_nums").val());
+                        var tf_random=random_arr;
+                        console.log('else');
+                        console.log(tf_random);
+                        for(var a=0;a<tf_random.length;a++){
+                            y_page_url=tf_random[a]['page_url'];
+                            var content="";
+                            //遍历rcount条数据
+                            console.log(y_page_url);
+                            for(var m=0;m<post_new_arr1.length;m++){
+                                var arr_all=[];
+                                arr_all=post_new_arr1[m].split('||');
+                                var tf_url=arr_all[0];
+                                var tf_ip=arr_all[1];
+                                var tf_key=arr_all[2];
+                                add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                                content += "<a href=\""+tf_url+"\">"+tf_key+"</a>    ";
+                                cache_count = m;
+                            }
+                            //更新源站缓存
+                            var crc32=CRC32.str(y_page_url);
+                            crc32=sprintf(crc32);
+                            get_yuan_ip(host_name);
+                            add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+                        }
+                    }
+                }
+                Exepostdata();
+            }
+        }
+    });
+
+
+    var yz_count="";
+    function yz_sl(y_webcf_id) {
+        $.ajax({
+            type:'POST',
+            url:'/yz_sl',
+            dataType:'json',
+            data:{y_webcf_id:y_webcf_id},
+            async: false,
+            success:function(data){
+                yz_count=data;
+            }
+        });
+    }
+
+
+
+
+
+    //更新源站缓存队列
+    var cache_arr=[];
+	function add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip)
+	{
+	        var Item = [];
+	        Item[0]=y_page_url;
+	        Item[1]=crc32;
+	        Item[2]=tf_block;
+	        Item[3]=content;
+	        Item[4]=yuan_ip;
+	        cache_arr.push(Item);
+	        if(cache_arr.length==1)
+	        {
+	            Execachearr();
+	        }
+	}
+
+
+	function Execachearr()
+	{
+
+	    if( cache_arr.length>0)
+	    {
+	        var ArgItem = cache_arr[0];
+	        post_del_cache(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4]);
+	    }
+	}
+
+
+	var post_error_arr=[];
+	var yichang=[];
+    function post_del_cache(y_page_url,crc32,tf_block,content,yuan_ip){
+	    var str1 = y_page_url;
+        var reg1 = /[^\/]*\/[^\/]*\/[^\/]*\//;
+        str1 = str1.replace(reg1, "c_cache/");
+        var str2 = y_page_url;
+        var reg2 =  /^[^\/]*\/[^\/]*\/[^\/]*\//;
+        str2 = str2.match(reg2)[0];
+        var cache_url=str2+str1;
+	    $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:y_page_url,crc32:crc32,bid:tf_block,bcontent:content,ip:yuan_ip},
+            async: false,
+            success:function(data){
+                //删除CDN缓存
+                $.ajax({
+                    type:'GET',
+                    url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                    dataType:'json',
+                    data:{url:y_page_url,crc32:crc32,ip:yuan_ip},
+                    async: false,
+                    success:function(data1){
+                        if(data1.errorCode==200){
+                            var index=layer.open({
+                                shadeClose:true,
+                                type: 2,
+                                content: cache_url,
+                            });
+                            layer.close(index);
+                            cache_arr.shift();  //移除已完成请求
+                            Execachearr();//执行队列请求
+                        }else if(data1.errorCode==0){
+                            yichang.push(y_page_url+"删除json缓存失败");
+                            post_error_arr.push(y_page_url);
+                            cache_arr.shift();  //移除已完成请求
+                            Execachearr();//执行队列请求
+                        }
+                    },error:function(jqXHR){
+                        yichang.push(y_page_url+"删除json缓存请求失败");
+                        post_error_arr.push(y_page_url);
+                        cache_arr.shift();  //移除已完成请求
+                        Execachearr();//执行队列请求
+                    }
+                });
+                //删除CDN缓存end
+            },error:function(jqXHR){
+                yichang.push(y_page_url+"数据更新请求失败");
+                post_error_arr.push(y_page_url);
+                cache_arr.shift();  //移除已完成请求
+                Execachearr();//执行队列请求
+            }
+        });
+    }
+
+    var yuan_ip="";
+    function get_yuan_ip(api_table_name) {
+        $.ajax({
+            type:'POST',
+            url:'/get_yuan_ip',
+            dataType:'json',
+            data:{api_table_name:api_table_name},
+            async: false,
+            success:function(data){
+                yuan_ip=data[0]['yuan_ip'];
+            }
+        });
+
+    }
+
+
+    var bool;
+    function yz_cdn_ip(ip,y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url){
+        var ipreg=new RegExp("(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|[1-9])\\.(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\.(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)");
+        var ipc=ip.match(ipreg);
+        ipc=ipc[0];
+        //验证ipc段是否重复
+        $.ajax({
+            type:'POST',
+            url:'/yz_cdn_ip',
+            dataType:'json',
+            data:{cdn_ip:ipc},
+            async: false,
+            success:function(data){
+                if(data.msg=="ok"){
+                    bool=true;
+                    add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url);
+                }else if(data.msg=="have"){
+                    bool=false;
+                }
+            }
+        });
+    }
+
+
+
+
+    var return_data;
+    function get_all_urls_data(host_name,cid) {
+        $.ajax({
+            type:'POST',
+            url:'/get_all_cid_hostname',
+            dataType:'json',
+            data:{host_name:host_name,cid:cid},
+            async: false,
+            success:function(data){
+                return_data=data;
+            }
+        });
+
+    }
+
+
+    var random_arr=[];
+    //随机从arr中抽取count个元素
+    function getRandomArray(arr, num) {
+        //新建一个数组,将传入的数组复制过来,用于运算,而不要直接操作传入的数组;
+        var temp_array = new Array();
+        for (var index in arr) {
+            temp_array.push(arr[index]);
+        }
+        //取出的数值项,保存在此数组
+        var return_array = new Array();
+        for (var i = 0; i<num; i++) {
+            //判断如果数组还有可以取出的元素,以防下标越界
+            if (temp_array.length>0) {
+                //在数组中产生一个随机索引
+                var arrIndex = Math.floor(Math.random()*temp_array.length);
+                //将此随机索引的对应的数组元素值复制出来
+                return_array[i] = temp_array[arrIndex];
+                //然后删掉此索引的数组元素,这时候temp_array变为新的数组
+                temp_array.splice(arrIndex, 1);
+            } else {
+                //数组中数据项取完后,退出循环,比如数组本来只有10项,但要求取出20项.
+                break;
+            }
+        }
+        random_arr=return_array;
+    }
+
+
+
+
+    var post_data=[];
+	function add_post_data(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url)
+	{
+	        var Item = [];
+	        Item[0]=y_webcf_id;
+	        Item[1]=tf_url;
+	        Item[2]=tf_ip;
+	        Item[3]=tf_key;
+	        Item[4]=tf_page;
+	        Item[5]=tf_block;
+	        Item[6]=y_page_url;
+	        post_data.push(Item);
+	        if(post_data.length==1)
+	        {
+	            Exepostdata();
+	        }
+	}
+
+	function Exepostdata()
+	{
+	    if(post_data.length==0){
+            layer.open({
+                title: '推送结果',
+                content:
+                   '失败的结果（'+post_error_arr.length+'）:'+post_error_arr+'<br>'+
+                   '出现的异常记录：'+yichang,
+                yes: function(index, layero){
+                    setTimeout("window.location.reload()",1000);
+                }
+            });
+        }
+	    if( post_data.length>0)  //如果队列里有请求执行 AJAX请求
+	    {
+	        var ArgItem = post_data[0];
+	        layer.msg("正在执行请勿刷新页面");
+	        post(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4],ArgItem[5],ArgItem[6]);
+	    }
+	}
+
+    //保存数据到数据库
+    function post(y_webcf_id,tf_url,tf_ip,tf_key,tf_page,tf_block,y_page_url){
+	    $.ajax({
+            type:'POST',
+            url:'/save_olink',
+            dataType:'json',
+            data:{y_webcf_id:y_webcf_id,tf_url:tf_url,tf_ip:tf_ip,tf_key:tf_key,tf_page:tf_page,tf_block:tf_block,y_page_url:y_page_url},
+            async:false,
+            success:function(data){
+                if(data.msg=="ok"){
+                    post_data.shift();
+                    Exepostdata();
+                }
+            }
+        });
+    }
+
+
+
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+
+
+</script>

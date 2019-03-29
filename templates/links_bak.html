@@ -1,0 +1,210 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <div class="layui-form">
+                <blockquote class="layui-elem-quote">
+                    友链管理：
+                </blockquote>
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <input type="text" id="link_url" placeholder="请输入URL" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <input type="text" id="key_words"  placeholder="请输入关键词" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <input type="text" id="qq" placeholder="请输入联系人QQ" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <button class="layui-btn" id="add">添加</button>
+                            <button class="layui-btn layui-btn-normal" id="push">推送</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="gotourl"></div>
+                <table id="demo" lay-filter="demo"></table>
+                <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                </script>
+            </div>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    /* 从website获取数据
+    $.ajax({
+        type: 'POST',
+        url: 'http://mm.baidu.com/website/table_website_id_api.php',
+        dataType: 'json',
+        data: {id: {{ id }}},
+        success: function (mm_data) {
+            $("#gotourl").html("访问地址:<a href=\""+mm_data[0].website_yhurl+"\" style=\"color:green\" target=\"_blank\">"+mm_data[0].domain+"</a>");
+            console.log(mm_data);
+        }
+    });
+    */
+    $("#gotourl").html("访问地址:<a href=\"{{ web_url }}\" style=\"color:green\" target=\"_blank\">{{ api_table_name }}</a>");
+
+    $("#push").click(function() {
+        var url="{{ web_url }}";
+        var yuan_ip = "{{ yuan_ip }}";
+        var crc32=CRC32.str(url);
+        crc32=sprintf(crc32);
+        var content="";
+        var obj_data={{list_link|safe}};
+        for(var obj_key in obj_data){
+            content += "<a href=\""+obj_data[obj_key]['link_url']+"\">"+obj_data[obj_key]['key_words']+"</a>    ";
+        }
+        $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:url,crc32:crc32,bid:1,bcontent:content,ip:yuan_ip},
+            success:function(data){
+                 layer.msg(data.errorMsg);
+                //更新友情链接
+                if(data.success){
+                    //删除CDN缓存
+                    $.ajax({
+                        type:'GET',
+                        url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                        dataType:'json',
+                        data:{url:url,crc32:crc32,ip:yuan_ip},
+                        success:function(data1){
+                            if(data1.success){
+                                layer.msg(data1.errorMsg);
+                                var index=layer.open({
+                                    shadeClose:true,
+                                    type: 2,
+                                    content: url+"c_cache/",
+                                });
+                                layer.close(index);
+                            }else{
+                                layer.msg(data1.errorMsg);
+                            }
+                        },
+                        error:function(jqXHR){
+                        }
+                    });
+                    //删除CDN缓存end
+                }else{
+                    alert(data.errorMsg);
+                }
+            },
+            error:function(jqXHR){
+            }
+        });
+    });
+
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+
+
+    layui.use('table', function(){
+        var table = layui.table;
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/link_list',
+            where: {
+                id: {{ id }}
+            },
+            page: true,
+            cols: [[ //表头
+                {field: 'link_url', title: 'URL',sort: true, fixed: 'left'},
+                {field: 'key_words', title: '关键词',sort: true, fixed: 'left'},
+                {field: 'qq', title: '联系人QQ',sort: true, fixed: 'left'},
+                {fixed: 'right', title:"添加时间", width:200, align:'center', templet: function(d){return '<span>'+timer(d.add_time)+'</span>'}},
+                {fixed: 'right', title:"操作", width:200, align:'center', toolbar: '#barDemo'},
+            ]]
+        });
+        //监听工具条
+        table.on('tool(demo)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                $.ajax({
+                    type:'POST',
+                    url:'/del_link',
+                    dataType:'json',
+                    data:{id:data.id},
+                    success:function(data){
+                        if(data.msg=="ok"){
+                            layer.msg("删除成功");
+                            setTimeout("window.location.reload()",1000);
+                        }else{
+                            layer.msg("删除失败");
+                            setTimeout("window.location.reload()",1000);
+                        }
+                    }
+                });
+            }
+        });
+
+        function timer(id){
+            var date = new Date(id * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+            var Y = date.getFullYear() + '-';
+            var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+            var D = date.getDate() + ' ';
+            var h = date.getHours() + ':';
+            var m = date.getMinutes() + ':';
+            var s = date.getSeconds();
+            return Y+M+D+h+m+s;
+        }
+
+
+        $("#add").click(function(){
+            var link_url=$("#link_url").val();
+            var key_words=$("#key_words").val();
+            var qq=$("#qq").val();
+            var webcf_id = "{{ id }}";
+            save_data(key_words,link_url,qq,webcf_id);
+        });
+        //保存到数据库
+        function save_data(key_words,link_url,qq,webcf_id){
+            $.ajax({
+                type:'POST',
+                url:'/add_link',
+                dataType:'json',
+                data:{key_words:key_words,link_url:link_url,qq:qq,webcf_id:webcf_id},
+                success:function(data){
+                    if(data.msg=="ok"){
+                        layer.msg("关键词:"+data.key_words+", URL:"+data.url+"添加成功");
+                        setTimeout("window.location.reload()",1000);
+                    }else if(data.msg=="have"){
+                        layer.msg("关键词:"+data.key_words+", URL:"+data.url+"已经存在");
+                    }else if(data.msg=="key_words"){
+                        layer.msg("关键词必须填写");
+                    }else if(data.msg=="link_url"){
+                        layer.msg("url必须填写");
+                    }else if(data.msg=="max"){
+                        layer.msg("该友链添加次数已达上限");
+                    }
+                }
+            });
+        }
+    });
+</script>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>批量修改</title>
+    {% load staticfiles %}
+    <script src="{% static 'js/jquery.js' %}" ></script>
+    <script src="{% static 'js/bootstrap.js' %}"></script>
+    <script src="{% static 'js/crc32.js' %}"></script>
+    <script src="{% static "layui/layui.all.js" %}"></script>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+</head>
+<body>
+    <div class="container">
+		<table class="table table-hover table-bordered table-list">
+	        <thead>
+            <select id="cid" onchange="change()">
+                <option value="1">首页</option>
+                <option value="2">栏目页</option>
+                <option value="3">内容页</option>
+                <option value="4">其他页</option>
+            </select>
+            <input type="button" class="btn btn-primary" value="批量修改"  data-toggle="modal" data-target="#myModal">
+	        <tr>
+	            <th width="16">
+	                <label>
+	                    <input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x">
+	                </label>
+	            </th>
+	            <th width="200">crc32</th>
+	            <th>url</th>
+	        </tr>
+	        </thead>
+            <tbody id="editinput">
+
+            </tbody>
+
+	    </table>
+
+	</div>
+
+    <!-- Modal -->
+	<div class="modal fade bs-example-modal-lg" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">内容编辑</h4>
+				</div>
+				<div class="modal-body">
+                    <table class="table table-hover table-bordered table-list">
+					 	<thead>
+					        <tr>
+					            <th>块ID</th>
+					            <th>内容</th>
+					        </tr>
+				        </thead>
+			            <tr>
+			                <td>
+								<select name="bid" id="bid">
+									<option value="1">块1</option>
+									<option value="2">块2</option>
+									<option value="3">块3</option>
+                                    <option value="4">块4</option>
+								</select>
+			                </td>
+			                <td><textarea name="bcontent" id="bcontent" cols="30" rows="10"></textarea></td>
+			            </tr>
+				    </table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" id="post_data" class="btn btn-primary">发送请求</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Modal end-->
+    </div>
+</body>
+<script>
+        var post_url="{{ param }}";
+        post_url = "http://"+post_url;
+        var cid=$("#cid").val();
+        //消息队列待请求数据
+	    var RequestArray = [];
+	    //保存数据库请求
+		var SaveArray = [];
+        $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/batchAllDataOutput',
+            dataType:'json',
+            data:{url:post_url},
+            success:function(data){
+                $("#myModal").click(function(){
+                    var select=show(data);
+                    $("#post_data").click(function(){
+                        for(var n_key in select){
+                            var post_crc32=data_obj[n_key]['crc32'];
+                            var bid=$("#bid").val();
+                            var bcontent=$("#bcontent").val();
+                            AddRequestArray(post_crc32,bid,bcontent);
+                        }
+                        return false;
+                    });
+                })
+                var data_obj=data;
+				for(var s_key in data_obj){
+					var crc32=data_obj[s_key]['crc32'];
+					var deadline=data_obj[s_key]['deadline'];
+					AddSaveArray(crc32,post_url,deadline);
+				}
+                var o_str="";
+                for(var o_key in data_obj){
+                    o_str += "<tr>\n" +
+                        "<td>\n" +
+                        "<input type=\"checkbox\" class=\"js-check\" data-yid=\"js-check-y\" data-xid=\"js-check-x\" name=\"ids[]\"\n" +
+                        "                               value=\""+o_key+"\">\n" +
+                        "</td>\n" +
+                        "<td class=\"crc\">"+data_obj[o_key]['crc32']+"</td>\n" +
+                        "<td class=\"url\">"+data_obj[o_key]['url']+"</td>\n" +
+                        "</tr>";
+
+                }
+                $("#editinput").html(o_str);
+
+            },
+            error:function(jqXHR){
+            }
+        });
+
+
+
+     function change(){
+         $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/batchDataOutput',
+            dataType:'json',
+            data:{url:post_url,cid:$("#cid").val()},
+            success:function(data){
+                $("#myModal").click(function(){
+                    var select=show(data);
+                    $("#post_data").click(function(){
+                        for(var n_key in select){
+                            var post_crc32=data_obj[n_key]['crc32'];
+                            var bid=$("#bid").val();
+                            var bcontent=$("#bcontent").val();
+                            AddRequestArray(post_crc32,bid,bcontent);
+                        }
+                        return false;
+                    });
+                })
+                var data_obj=data;
+				for(var s_key in data_obj){
+					var crc32=data_obj[s_key]['crc32'];
+					var deadline=data_obj[s_key]['deadline'];
+					AddSaveArray(crc32,post_url,deadline);
+				}
+                var o_str="";
+                for(var o_key in data_obj){
+                    o_str += "<tr>\n" +
+                        "<td>\n" +
+                        "<input type=\"checkbox\" class=\"js-check\" data-yid=\"js-check-y\" data-xid=\"js-check-x\" name=\"ids[]\"\n" +
+                        "                               value=\""+o_key+"\">\n" +
+                        "</td>\n" +
+                        "<td class=\"crc\">"+data_obj[o_key]['crc32']+"</td>\n" +
+                        "<td class=\"url\">"+data_obj[o_key]['url']+"</td>\n" +
+                        "</tr>";
+
+                }
+                $("#editinput").html(o_str);
+
+            },
+            error:function(jqXHR){
+            }
+        });
+     }
+    function post_data(crc32,bid,content){
+        $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:post_url,crc32:crc32,bid:bid,bcontent:content},
+            success:function(data){
+                if(data.success){
+                    layer.msg(RequestArray[0]+"已修改");
+                    RequestArray.shift();  //移除已完成请求
+                    ExeRequestArray();//执行队列请求
+                    if(RequestArray.length==0){
+                        layer.msg("批量修改完成");
+                        window.location.reload();
+                    }
+                }
+            },
+            error:function(jqXHR){
+                ExeRequestArray();//执行队列请求
+            }
+        });
+    };
+
+
+	//加入请求队列
+	function AddRequestArray(post_crc32,bid,bcontent)
+	{
+	        var Item = [];
+	        Item[0]=post_crc32;
+	        Item[1]=bid;
+	        Item[2]=bcontent;
+	        RequestArray.push(Item);
+	        if(RequestArray.length==1)
+	        {
+	            ExeRequestArray();
+	        }
+	}
+
+	//执行队列里的顺序第一个的请求
+	function ExeRequestArray()
+	{
+	    if( RequestArray.length>0)
+	    {
+	        var ArgItem = RequestArray[0];
+	        post_data(ArgItem[0],ArgItem[1],ArgItem[2]);
+	    }
+	}
+
+
+    //全选反选
+	$(".js-check-all").on('click',function() {
+		$("input[name='ids[]']").prop("checked", this.checked);
+	});
+	$("input[name='ids[]']").on('click',function() {
+		var $subs = $("input[name='ids[]']");
+		$(".js-check-all").prop("checked" , $subs.length == $subs.filter(":checked").length ? true :false);
+	});
+	//全选反选end
+	//获取选中行数据
+	function show(data){
+	    obj = $(".js-check");
+	    check_val = [];
+	    for(k in obj){
+	        if(obj[k].checked)
+	            check_val.push(data[obj[k].value]);
+	    }
+	    return check_val;
+	}
+	//获取选中行数据end
+
+	//添加到保存数据库队列
+	function AddSaveArray(crc32,url,deadline)
+	{
+	        var Item = [];
+	        Item[0]=crc32;
+	        Item[1]=url;
+	        Item[2]=deadline;
+	        SaveArray.push(Item);
+	        if(SaveArray.length==1)
+	        {
+	            ExeSaveArray();
+	        }
+	}
+
+	//执行保存数据库队列里的顺序第一个的请求
+	function ExeSaveArray()
+	{
+	    if( SaveArray.length>0)
+	    {
+	        var ArgItem = SaveArray[0];
+	        save_data(ArgItem[0],ArgItem[1],ArgItem[2]);
+	    }
+	}
+
+	//保存到数据库
+    function save_data(crc32,url,deadline){
+        $.ajax({
+            type:'POST',
+            url:'/save',
+            dataType:'json',
+            data:{crc32:crc32,url:url,deadline:deadline},
+            success:function(data){
+                if(data=="ok"){
+                    layer.msg(SaveArray[0]+SaveArray[1]+"添加成功");
+                    SaveArray.shift();  //移除已完成请求
+                    ExeSaveArray();//执行队列请求
+                    if(SaveArray.length==0){
+                        layer.msg("所有数据已经存入数据库");
+                        return;
+                    }
+                }else if(data=="no"){
+                    layer.msg(SaveArray[0]+SaveArray[1]+"添加失败");
+                    SaveArray.shift();  //移除该请求
+                    ExeSaveArray();//执行队列请求
+                }
+            },
+            error:function(jqXHR){
+                SaveArray.shift();  //移除该请求
+                ExeSaveArray();//执行队列请求
+            }
+        });
+    }
+
+</script>
+
+</html>

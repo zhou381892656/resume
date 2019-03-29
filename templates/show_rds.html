@@ -1,0 +1,111 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                站点信息：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-form-text">
+                    <label class="layui-form-label">域名</label>
+                    <div class="layui-input-block">
+                        <textarea placeholder="多个域名换行隔开" class="layui-textarea" id="api_table_name"></textarea>
+                    </div>
+                    <div class="layui-form-mid" style="color:red">输入要建立数据库的网站域名.例：www.baidu.com。注意最后一个域名之后不能带有换行，否则最后界面会一直加载，因为换行也算作一个空数据。</div>
+                </div>
+            </div>
+
+
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">生成地址</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var loading="";
+    $("#ok").click(function () {
+        loading=layer.load(1, {shade: [0.8, '#393D49']});
+        var db_pass="qqqAAA0130";
+        var url_str = $("#api_table_name").val();
+        var url_arr = url_str.split('\n');
+        for(var i=0;i<url_arr.length;i++){
+            var url=url_arr[i]+"";
+            url = url.replace(/\s+/g,"");
+            queue(url,db_pass);
+        }
+    });
+
+
+
+
+    var host_name_arr=[];
+	function queue(url,db_pass)
+	{
+        var str=url;
+        str=str.replace(/^www\./,"");
+        str=str.replace(/^m\./,"");
+        str=str.replace(/\./g,"_");
+        str=str.replace(/\-/g,"");
+        str="db_"+str;
+        //大写强转小写
+        str=str.toLowerCase();
+        var db_name=str;
+        var db_user=str.substring(0,16);
+        db_user=db_user.replace(/-/g,"");
+        db_user=db_user.toLowerCase();
+        var myreg=new RegExp("_$");
+        if(myreg.test(db_user)){
+            db_user=db_user.substring(0,15);
+        }
+        var Item = [];
+        Item[0]=db_user;
+        Item[1]=db_name;
+        Item[2]=db_pass;
+        Item[3]=url;
+        host_name_arr.push(Item);
+        if(host_name_arr.length==1)
+        {
+            Exehostnamearr();
+        }
+
+	}
+
+	function Exehostnamearr()
+	{
+        if(host_name_arr.length==0){
+            layer.close(loading);
+            layer.open({
+                title: '创建结果',
+                shadeClose:true,
+                content:
+                   view,
+                yes: function(index, layero){
+                    setTimeout("window.location.reload()",1000);
+                }
+            });
+        }
+	    if( host_name_arr.length>0)
+	    {
+	        var ArgItem = host_name_arr[0];
+	        create_db(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3]);
+	    }
+	}
+
+    var view='';
+    //RDS操作
+    function create_db(db_user,db_name,db_pass,url){
+        view += 'http://'+url+'/install/index.php?step=3&value1=sz1-nei.rds.kuadu.net&value2='+db_user+'&value3='+db_pass+'&value4='+db_name+'<br/>';
+
+        host_name_arr.shift();
+        Exehostnamearr();
+    }
+    
+
+
+</script>

@@ -1,0 +1,73 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                新增缓存规则：
+            </blockquote>
+            <div class="layui-form-item">
+                <label class="layui-form-label">页面分类</label>
+                <div class="layui-input-block">
+                    <select id="cid">
+                        <option value="1">首页</option>
+                        <option value="2">栏目页</option>
+                        <option value="3">内容页</option>
+                        <option value="4">其他页</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">缓存周期</label>
+                <div class="layui-input-block">
+                    <input type="text" id="deadline" placeholder="单位（秒）" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加缓存规则</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    $("#ok").click(function () {
+        if($("#deadline").val()==""){
+            layer.msg("缓存周期不能为空");
+            return;
+        }
+        $.ajax({
+            type:'POST',
+            url:'/add_cache_config',
+            dataType:'json',
+            data:{host_name:"{{ param }}",cid:$("#cid").val(),deadline:$("#deadline").val(),types:"del_c_cache"},
+            success:function(data){
+                $.ajax({
+                    type:'POST',
+                    url:'/get_all_cache_config',
+                    dataType:'json',
+                    success:function(data1){
+                        var arr=[];
+                        for(var n_key in data1){
+                            arr.push([data1[n_key]['host_name'],data1[n_key]['cid'],data1[n_key]['deadline'],data1[n_key]['yuan_ip']]);
+                        }
+                        var json = JSON.stringify(arr);
+                        $.ajax({
+                            type:'POST',
+                            url:'http://api.shawdo.com/api/admin/public/ajax_save_json',
+                            dataType:'json',
+                            data:{data:json,types:"del_c_cache"},
+                            success:function(data2){
+                                layer.msg("添加成功");
+                                {#setTimeout("window.location.reload()",1000);#}
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>

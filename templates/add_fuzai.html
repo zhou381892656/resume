@@ -1,0 +1,113 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                计算服务列表：
+            </blockquote>
+
+            <div class="main">
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">别名</label>
+                    <div class="layui-input-block">
+                      <input id="load_name" type="text" name="servername" autocomplete="off" placeholder="请输入服务器别名" class="layui-input">
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">地区</label>
+                    <div class="layui-input-block">
+                      <input id="load_city" type="text" name="servername" autocomplete="off" placeholder="请输入服务器地区" class="layui-input">
+                    </div>
+                  </div> 
+
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">公网ip</label>
+                    <div class="layui-input-block">
+                      <input id="load_ip" type="text" name="servername" autocomplete="off" placeholder="公网ip" class="layui-input">
+                    </div>
+                  </div>  
+
+                 <div class="layui-form-item">
+                    <button id="submit" class="layui-btn" lay-submit="" lay-filter="demo2">提交</button>
+                  </div>                                                       
+
+
+            </div>
+
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script type="text/javascript">
+ function tip(name){
+    layer.open({
+      title: '提示',
+      content: name
+    });     
+}   
+    $(function(){
+        $('#submit').on('click',function(){
+            var load_name = $('#load_name').val();
+            var load_city = $('#load_city').val();
+            var load_ip = $('#load_ip').val();
+            var dataArr = ['别名','地区','公网IP'];
+            var arrIndex = ['rds_name','rds_city','w_ip','n_ip','super_root','super_pwd','rds_port'];
+            var data = {'load_name':load_name,'load_city':load_city,'load_ip':load_ip};
+            for(var key in data){
+                if(data[key] == ''){
+                    var n = arrIndex.indexOf(key);
+                    tip(dataArr[n]+'不能为空');
+                    return;
+                }
+            }
+            var loading=layer.load(1, {shade: [0.8, '#393D49']});
+            $.ajax({
+                url:'/add_server_avg',
+                type:'POST',
+                data:data,
+                success:function(res){
+                    layer.msg(res.msg);
+                    window.location.reload();
+                }
+            })
+        })
+    })
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

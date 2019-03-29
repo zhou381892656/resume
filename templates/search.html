@@ -1,0 +1,224 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <div class="layui-form">
+                <blockquote class="layui-elem-quote">
+                    友链操作统计：
+                </blockquote>
+                <div class="layui-form-item">
+                    开始时间:
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="test1">
+                    </div>
+                    结束时间:
+                    <div class="layui-inline">
+                        <input type="text" class="layui-input" id="test2">
+                    </div>
+                    <div class="layui-inline">
+                        <select id="web_user">
+
+                        </select>
+                    </div>
+
+                    <div class="layui-inline">
+                        <button class="layui-btn" id="search">查询</button>
+                    </div>
+                </div>
+                <div id="res">
+
+                </div>
+                <table class="layui-table">
+                    <colgroup>
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                        <col>
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>统计</th>
+                            <th>我方站点(domain)</th>
+                            <th>我方站点关键词(website_key)</th>
+                            <th>对方关键词(key_words)</th>
+                            <th>对方站点(link_url)</th>
+                            <th>添加时间</th>
+                            <th>删除时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="res1">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form'], function() {
+        var form = layui.form;
+        $.ajax({
+            type: 'POST',
+            url: '/get_web_user',
+            dataType: 'json',
+            success: function (data) {
+                console.log(data);
+                var str = "<option value=\"\">请选择</option>";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['user_name'] +data[key]['id'] + "</option>";
+                }
+                $("#web_user").html(str);
+                form.render();
+            }
+        });
+    });
+
+
+    $("#search").click(function () {
+        var loading=layer.load(1, {shade: [0.8, '#393D49']});
+        var start=$("#test1").val();
+        var end=$("#test2").val();
+        var user_id=$("#web_user").val();
+        var str="";
+        var str1="";
+        var i=1;
+        $.ajax({
+            type:'POST',
+            url:'/get_user_webcf',
+            dataType:'json',
+            data:{user_id:user_id},
+            success:function(data){
+                for(var key in data){
+                    $.ajax({
+                        type:'POST',
+                        url:'/search_user_link',
+                        dataType:'json',
+                        data:{webcf_id:data[key]['id'],start:start,end:end,domain:data[key]['api_table_name']},
+                        async:false,
+                        success:function(data1){
+                            if(data1.msg=="have"){
+                                    str +="<fieldset class=\"layui-elem-field layui-field-title\" style=\"margin-top: 30px;\">\n" +
+                                        "<legend>"+data1['domain']+"</legend>\n" +
+                                        "</fieldset>" +
+                                        "<table class=\"layui-table\" style=\"margin:0px 50px\"  lay-size=\"sm\">\n" +
+                                        "<colgroup>\n" +
+                                        "<col width=\"150\">\n" +
+                                        "<col width=\"150\">\n" +
+                                        "<col width=\"150\">\n" +
+                                        "</colgroup>\n" +
+                                        "<tbody>\n";
+
+
+                                for(var o_key in data1['add_data']){
+                                    str +="<tr>\n" +
+                                        "<td>"+data1['add_data'][o_key]['link_url']+"</td>\n" +
+                                        "<td>"+data1['add_data'][o_key]['key_words']+"</td>\n" +
+                                        "<td>"+timer(parseInt(data1['add_data'][o_key]['add_time']))+"</td>\n" +
+                                        "</tr>\n";
+                                }
+                                str +=
+                                    "</tbody>\n" +
+                                    "</table>\n" +
+                                    "</div>\n" +
+                                    "</div>\n" +
+                                    "</div>";
+
+                                for(var o_key1 in data1['add_data']){
+                                    str1 += "<tr>";
+                                    if(data1['add_data'][o_key1]['del_time']==""){
+                                        str1 += "<td>"+i+"</td>";
+                                        i++;
+                                    }else if(timer(parseInt(data1['add_data'][o_key1]['del_time']))-timer(parseInt(data1['add_data'][o_key1]['add_time']))>=345600){
+                                        str1 += "<td><span style='color:green'>"+i+"</span></td>";
+                                        i++;
+                                    }else {
+                                        str1 += "<td><span style='color:red'>未计算</span></td>";
+                                    }
+
+                                    str1 += "<td>"+data1['domain']+"</td>\n" +
+                                    "<td>"+data1['website_key']+"</td>\n" +
+                                    "<td>"+data1['add_data'][o_key1]['key_words']+"</td>\n" +
+                                    "<td>"+data1['add_data'][o_key1]['link_url']+"</td>\n" +
+                                    "<td>"+timer(parseInt(data1['add_data'][o_key1]['add_time']))+"</td>\n";
+                                    if(data1['add_data'][o_key1]['del_time']==""){
+                                        str1 += "<td></td>\n" +
+                                                "</tr>";
+                                    }else{
+                                        str1 += "<td>"+timer(parseInt(data1['add_data'][o_key1]['del_time']))+"</td>\n" +
+                                                "</tr>";
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                $('#res').html(str);
+                $('#res1').html(str1);
+                layer.close(loading);
+            }
+        });
+    });
+
+    function AddresArray(url,add_data,add_count,del_data,del_count)
+	{
+	        var Item = [];
+	        Item[0]=url;
+	        Item[1]=add_data;
+            Item[2]=add_count;
+            Item[3]=del_data;
+            Item[4]=del_count;
+	        resArray.push(Item);
+	}
+
+    //时间选择器
+    layui.use('laydate', function(){
+        var laydate = layui.laydate;
+
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#test1',
+            value: getNowFormatDate(),
+        });
+        laydate.render({
+            elem: '#test2',
+            value: getNowFormatDate(),
+        });
+    });
+    //获取当前日期
+    function getNowFormatDate() {
+        var date = new Date();
+        var seperator1 = "-";
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        var strDate = date.getDate();
+        if (month >= 1 && month <= 9) {
+            month = "0" + month;
+        }
+        if (strDate >= 0 && strDate <= 9) {
+            strDate = "0" + strDate;
+        }
+        var currentdate = year + seperator1 + month + seperator1 + strDate;
+        return currentdate;
+    }
+
+    //时间格式化
+    function timer(id){
+        var date = new Date(id * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        var h = date.getHours() + ':';
+        var m = date.getMinutes() + ':';
+        var s = date.getSeconds();
+        return Y+M+D+h+m+s;
+    }
+</script>
+

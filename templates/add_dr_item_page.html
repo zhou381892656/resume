@@ -1,0 +1,100 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加项目：
+            </blockquote>
+            <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                <a href="/add_item_page" style="color:deepskyblue"><span style="color:deepskyblue">添加自动爬取项目</span></a>
+                <a href="/add_dr_item_page"><span style="color:deepskyblue">添加普通项目</span></a>
+            </span>
+            <div class="layui-form-item">
+                <label class="layui-form-label">项目名</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="item" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">爬取站点</label>
+                <div class="layui-input-block" id="type">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">关键词</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="key" class="layui-input" value="">
+                </div>
+                <div class="layui-form-mid" style="color:red">输入期望爬取的关键词</div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加项目</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form'], function() {
+        var form = layui.form;
+        $.ajax({
+            type: 'POST',
+            url: '/all_type_name',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<input type=\"radio\" name=\"type\" value=\""+data[key]['type_name']+"\" title=\""+data[key]['type_name']+"\">";
+                }
+                $("#type").html(str);
+                form.render();
+            }
+        });
+
+    });
+    $("#ok").click(function () {
+        $.ajax({
+            type:'POST',
+            url:'/add_item',
+            dataType:'json',
+            data:{item:$("#item").val(),type:$('input:radio:checked').val(),key:$("#key").val()},
+            success:function(data){
+                if(data.msg=="ok"){
+                    $.ajax({
+                        type:'POST',
+                          url:'http://120.79.150.193:5000/debug/add_todo_project',//爬虫地址
+                       //  url:'/all_type_name',
+                        dataType:'json',
+                        data:{type:$('input:radio:checked').val(),key:$("#key").val()},
+                        success:function(data){
+                        if(data.http_status == '200'){
+                             $.ajax({
+                                type:'POST',
+                                url:'/add_porject',
+                                dataType:'json',
+                                data:{projects_name:$("#item").val(),pyspider_id:data.id},
+                                success:function(data){
+                                    layer.msg("添加成功");
+                                    setTimeout("window.location.reload()",1000);
+                                }
+                            });
+                         }
+                            //layer.msg("添加成功");
+                            //setTimeout("window.location.reload()",1000);
+                        }
+                    });
+                }else if(data.msg=="have"){
+                    layer.msg("项目已存在");
+                    setTimeout("window.location.reload()",1000);
+                }
+            }
+        });
+
+    });
+
+
+</script>

@@ -1,0 +1,219 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form">
+            <blockquote class="layui-elem-quote">
+                源站URL列表：
+            </blockquote>
+                        <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="link_url" placeholder="请输入URL" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" data-type="reload" id="search">查询</button>
+
+                    </div>
+                </div>
+                <label class="layui-form-label">URL</label>
+                <div class="layui-input-inline">
+
+                </div>
+            </div>
+            <table id="demo" lay-filter="demo"></table>
+            <div class="demoTable">
+                <button class="layui-btn  layui-btn-normal layui-btn-xs" data-type="getCheckData">推送至任务队列</button>
+            </div>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    //消息队列待请求数据
+    var RequestArray = [];
+    var count1 = "";
+    layui.use(['form','table'], function() {
+        var table = layui.table;
+        var form = layui.form;
+        var $ = layui.$, active = {
+            getCheckData: function () { //获取选中数据
+                layer.msg("111");
+                var checkStatus = table.checkStatus('url_list')
+                    , data = checkStatus.data;
+                {#layer.alert(JSON.stringify(data));#}
+                var json_data = data;
+                for (var n_key in json_data) {
+                    var id = json_data[n_key]['id'];
+                    var url = json_data[n_key]['url'];
+                    var article_origin = json_data[n_key]['article_origin'];
+                    var cat_id = json_data[n_key]['cat_id'];
+                    var publish_nums = json_data[n_key]['publish_nums'];
+                    var interval = json_data[n_key]['interval'];
+                    var deadline = json_data[n_key]['deadline'];
+                    var web_id = json_data[n_key]['web_id'];
+                    AddRequestArray(url, article_origin, cat_id, publish_nums, interval, id, deadline, web_id);
+                    count1 = n_key;
+                }
+
+            }, reload: function () {
+                var demoReload = $('#link_url');
+                //执行重载
+                table.reload('url_list', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+
+                        url: demoReload.val()
+
+                    }
+                });
+            }
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/get_user',
+            dataType: 'json',
+            success: function (data) {
+                var new_data = data.data;
+                var str = "<option value=\"\">请选择</option>";
+                for (var key in new_data) {
+                    str += "<option value=\"" + new_data[key]['id'] + "\">" + new_data[key]['first_name'] + "</option>";
+                }
+                $("#user").append(str);
+                form.render('select');
+            }
+        });
+
+
+        form.on('select(user)', function (data) {
+            table.reload('url_list', {
+                url: '/user_config_list',
+                method: 'POST',
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                }
+                , where: {
+                    user_id: data.value
+                }
+            });
+        });
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/config_list',
+            page: true,
+            id: 'url_list',
+            where: {
+                type: "www.",
+                'url': ''
+            },
+            cols: [[ //表头
+                {type: 'checkbox', fixed: 'left'},
+                {field: 'url', title: 'URL', sort: true, fixed: 'left'},
+                {field: 'user_id', title: '网站管理员', sort: true, fixed: 'left'},
+                {field: 'article_from', title: '文章来源', sort: true, fixed: 'left'},
+                {field: 'cat_id', title: '文章分类ID', sort: true, fixed: 'left'},
+                {field: 'publish_nums', title: '发布数量', sort: true, fixed: 'left'},
+                {field: 'deadline', title: '时间间隔', sort: true, fixed: 'left'},
+            ]]
+        });
+
+    });
+
+	//加入请求队列
+	function AddRequestArray(url,article_origin,cat_id,publish_nums,interval,id,deadline, web_id)
+	{
+	        var Item = [];
+	        Item[0]=url;
+	        Item[1]=article_origin;
+	        Item[2]=cat_id;
+	        Item[3]=publish_nums;
+	        Item[4]=interval;
+	        Item[5]=id;
+            Item[6] = deadline;
+            Item[7] = web_id;
+	        RequestArray.push(Item);
+	        if(RequestArray.length==1)
+	        {
+	            ExeRequestArray();
+	        }
+	}
+
+
+	function ExeRequestArray()
+	{
+	    if( RequestArray.length==0)
+	    {
+	        layer.msg("推送完成");
+	    }
+
+	    if( RequestArray.length>0)
+	    {
+	        var ArgItem = RequestArray[0];
+	        get_url_data(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4],ArgItem[5],ArgItem[6],ArgItem[7]);
+	    }
+	}
+
+
+	function post_data(url,article_origin,cat_id,publish_nums,interval,id,data,deadline, web_id){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/Queue/savecycleWebMsg',
+            dataType:'json',
+            data:{url:url,article_origin:article_origin,cat_id:cat_id,publish_nums:publish_nums,interval:interval,data:data,deadline:deadline,web_id:web_id},
+            success:function(data){
+
+                if(data.code ==1){
+                    //layer.msg("已完成"+Math.round((1-RequestArray.length/count1)*100)+"%");
+
+                    RequestArray.shift();  //移除已完成请求
+                    ExeRequestArray();//执行队列请求
+                    if(RequestArray.length==0){
+                        layer.msg("已全部推送至任务队列");
+                  }
+                }
+                else{
+                        layer.msg(url+data.msg);
+                    }
+            },
+            error:function(jqXHR){
+                //layer.msg(jqXHR.msg);
+                //ExeRequestArray();//执行队列请求
+            }
+        });
+    };
+
+	function get_url_data(url,article_origin,cat_id,publish_nums,interval,id,deadline, web_id){
+                $.ajax({
+            type:'POST',
+            url:'/get_webmsg',
+            dataType:'json',
+            data:{id:id},
+            success:function(data){
+                if(data){
+                  post_data(url,article_origin,cat_id,publish_nums,interval,id,data,deadline, web_id);
+                }
+            },
+            error:function(jqXHR){
+                //ExeRequestArray();//执行队列请求
+            }
+        });
+    }
+</script>

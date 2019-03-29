@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>友情链接管理</title>
+    {% load staticfiles %}
+    <script src="{% static "js/jquery.js" %}"></script>
+    <script src="{% static "js/crc32.js" %}"></script>
+    <script src="{% static 'js/csrf.js' %}"></script>
+    <script src="{% static "layui/layui.all.js" %}"></script>
+    <link rel="stylesheet" href="{% static "css/bootstrap.css" %}">
+</head>
+<body>
+    <div class="container">
+        <div id="data">
+            <div class="form-group">
+                <div>
+                    开始时间:<input type="date" id="start">
+                    结束时间:<input type="date" id="end">
+                    <button class="btn btn-success" id="search">查询</button>
+                </div>
+            </div>
+        </div>
+        <table class="table table-hover table-bordered table-list">
+	        <thead>
+                <tr>
+                    <th>URL</th>
+                    <th width="200">关键词</th>
+                    <th width="200">添加时间</th>
+                    <th width="200">删除时间</th>
+                </tr>
+	        </thead>
+            <tbody id="editinput">
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr><td colspan="4" style="background-color: #5cb85c"> 总条数:</td></tr>
+            </tbody>
+
+	    </table>
+    </div>
+</body>
+<script>
+    var url = "http://{{ param }}/";
+    var crc32=CRC32.str(url);
+    crc32=sprintf(crc32);
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+    $.ajax({
+        type:'POST',
+        url:'/all_link',
+        dataType:'json',
+        data:{index_url: url},
+        success:function(data){
+            console.log(data);
+            var data_obj=data.data;
+            var o_str="";
+            for(var o_key in data_obj){
+                o_str += "<tr>\n" +
+                            "<td>"+data_obj[o_key]['link_url']+"</td>\n" +
+                            "<td>"+data_obj[o_key]['key_words']+"</td>\n" +
+                            "<td>"+data_obj[o_key]['add_time']+"</td>\n" +
+                            "<td>"+data_obj[o_key]['del_time']+"</td>\n" +
+                         "</tr>";
+            }
+            o_str += "<tr><td colspan=\"4\" style=\"background-color: #5cb85c\"> 总条数:"+data.counts+"</td></tr>";
+            $("#editinput").html(o_str);
+        }
+    });
+    $("#search").click(function(){
+        $.ajax({
+            type:'POST',
+            url:'/search_link',
+            dataType:'json',
+            data:{start: $("#start").val(), end: $("#end").val(), index_url: url},
+            success:function(data){
+                var data_obj_add=data.addData;
+                var o_str="";
+                for(var o_key1 in data_obj_add){
+                    o_str += "<tr>\n" +
+                                "<td>"+data_obj_add[o_key1]['link_url']+"</td>\n" +
+                                "<td>"+data_obj_add[o_key1]['key_words']+"</td>\n" +
+                                "<td>"+data_obj_add[o_key1]['add_time']+"</td>\n" +
+                                "<td>"+data_obj_add[o_key1]['del_time']+"</td>\n" +
+                             "</tr>";
+                }
+                o_str += "<tr><td colspan=\"4\" style=\"background-color: #5cb85c\"> 总条数:"+data.addCount+"</td></tr>";
+                var data_obj_del=data.delData;
+                for(var o_key2 in data_obj_del){
+                    o_str += "<tr>\n" +
+                                "<td>"+data_obj_del[o_key2]['link_url']+"</td>\n" +
+                                "<td>"+data_obj_del[o_key2]['key_words']+"</td>\n" +
+                                "<td>"+data_obj_del[o_key2]['add_time']+"</td>\n" +
+                                "<td>"+data_obj_del[o_key2]['del_time']+"</td>\n" +
+                             "</tr>";
+                }
+                o_str += "<tr><td colspan=\"4\" style=\"background-color: red\"> 总条数:"+data.delCount+"</td></tr>";
+                $("#editinput").html(o_str);
+            }
+        });
+    });
+</script>
+</html>

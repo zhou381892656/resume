@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>编辑</title>
+    {% load staticfiles %}
+    <script src="{% static 'js/jquery.js' %}" ></script>
+    <script src="{% static 'js/bootstrap.js' %}"></script>
+    <script src="{% static 'js/crc32.js' %}"></script>
+    <script src="{% static 'js/csrf.js' %}"></script>
+    <script src="{% static "layui/layui.all.js" %}"></script>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}">
+</head>
+<body>
+     <div class="container">
+         <form class="form-horizontal" role="form">
+{#            <div class="form-group">#}
+{#                <label for="name">CDN的IP</label>#}
+{#                <input type="text" class="form-control" id="cdn_ip"#}
+{#                       placeholder="请输入CDN的IP" value="{{ cdn_ip }}">#}
+{#            </div>#}
+            <div class="form-group">
+                <label for="name">源站的IP</label>
+                <input type="text" class="form-control" id="yuan_ip"
+                   placeholder="源站的IP" value="{{ yuan_ip }}">
+            </div>
+             <div class="form-group">
+                <label for="name">网站负责人ID</label>
+                <input type="text" class="form-control" id="user_id"
+                   placeholder="网站负责人ID" value="{{ user_id }}">
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" id="save">保存</button>
+            </div>
+        </form>
+
+	</div>
+</body>
+<script>
+    //保存到数据库
+    $("#save").click(function () {
+        $.ajax({
+            type:'POST',
+            url:'/edit_url',
+            dataType:'json',
+            data:{id:{{param}},yuan_ip:$("#yuan_ip").val(),cdn_ip:$("#cdn_ip").val(),user_id:$("#user_id").val()},
+            success:function(data){
+                if(data.msg=="ok"){
+                    window.location.href='/';
+                }else{
+                    layer.msg("更新失败");
+                    setTimeout("window.location.reload()",1000);
+                }
+            }
+        });
+    });
+</script>
+</html>

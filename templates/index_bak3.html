@@ -1,0 +1,1029 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form">
+            <blockquote class="layui-elem-quote">
+                源站URL列表：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="link_url" placeholder="请输入URL" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" data-type="reload" id="search">查询</button>
+                        <a href="/add_website_page" class="layui-btn layui-btn-danger" id="add_website">新增站点</a>
+                    </div>
+                </div>
+                <label class="layui-form-label">CDN服务器</label>
+                <div class="layui-input-inline">
+                    <select id="docker_ip" lay-filter="docker_ip">
+
+                    </select>
+                </div>
+            </div>
+            <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                <a href="/" style="color:deepskyblue"><span style="color:deepskyblue">web站</span></a>
+                <a href="/m_index"><span style="color:deepskyblue">手机站</span></a>
+            </span>
+            <table id="demo" lay-filter="demo"></table>
+            <div class="demoTable">
+                <button class="layui-btn layui-btn-danger layui-btn-xs" data-type="getCheckData">修改块数据</button>
+                <button class="layui-btn layui-btn-normal layui-btn-xs" data-type="delcache">删除CDN缓存</button>
+{#                <button class="layui-btn layui-btn-xs" data-type="config_edit">站点批量修改docker_cdn_ip</button>#}
+                <button class="layui-btn layui-btn-warm layui-btn-xs" data-type="cache_config_edit">站点批量修改缓存规则</button>
+            </div>
+        </div>
+        <div class="layui-footer">
+{#            <button class="layui-btn layui-btn-danger layui-btn-xs" id="getnewdata">同步website数据</button>#}
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var loading="";
+    //消息队列待请求数据
+    var RequestArray = [];
+    var count1 = "";
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+
+    layui.use(['form','table'], function(){
+         var table = layui.table;
+         var form = layui.form;
+         form.on('switch(on_close)', function(data){
+             var web_id=$(data.elem).attr("lay-param");
+             console.log(data.elem.checked); //开关是否开启，true或者false
+             if(data.elem.checked){
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_404_status',
+                    dataType: 'json',
+                    data:{jk404_status:1,web_id:web_id},
+                    success: function (data) {
+                        var web_domain=data.data[0]['api_table_name'];
+                        web_domain=web_domain.replace(/\./g,"_");
+                        $.ajax({
+                            type: 'POST',
+                            url: 'http://api.shawdo.com/api/admin/public/add_web_list',
+                            dataType: 'json',
+                            data:{webcf_id:web_id,act:"add",zttime:"1548401671",type:7,web_domain:web_domain,time_cycle:7200},
+                            success: function (data1) {
+                                layer.msg(data1.msg);
+                            }
+                        });
+                    }
+                });
+             }else{
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_404_status',
+                    dataType: 'json',
+                    data:{jk404_status:0,web_id:web_id},
+                    success: function (data) {
+                        var web_domain=data.data[0]['api_table_name'];
+                        web_domain=web_domain.replace(/\./g,"_");
+                        $.ajax({
+                            type: 'POST',
+                            url: 'http://api.shawdo.com/api/admin/public/add_web_list',
+                            dataType: 'json',
+                            data:{webcf_id:web_id,act:"del",zttime:"1548401671",type:7,web_domain:web_domain,time_cycle:7200},
+                            success: function (data1) {
+                                layer.msg(data1.msg);
+                            }
+                        });
+                    }
+                });
+             }
+         });
+         var $ = layui.$, active = {
+            getCheckData: function(){ //获取选中数据
+                var checkStatus = table.checkStatus('url_list')
+                ,data = checkStatus.data;
+                {#layer.alert(JSON.stringify(data));#}
+                layer.open({
+                    title: '批量修改',
+                    area:["50%","60%"],
+                    content:"<body>\n" +
+                        "<div class=\"layui-form layui-form-pane\">\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">页面分类</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "            <select id=\"cid\">\n" +
+                        "                <option value=\"1\">首页</option>\n" +
+                        "                <option value=\"2\">栏目页</option>\n" +
+                        "                <option value=\"3\">内容页</option>\n" +
+                        "                <option value=\"4\">其他页</option>\n" +
+                        "            </select>\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">块选择</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "            <select id=\"bid\">\n" +
+                        "                <option value=\"1\">块1</option>\n" +
+                        "                <option value=\"2\">块2</option>\n" +
+                        "                <option value=\"3\">块3</option>\n" +
+                        "                <option value=\"4\">块4</option>\n" +
+                        "            </select>\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "    <div class=\"layui-form-item\" pane=\"\">\n" +
+                        "        <label class=\"layui-form-label\">更新方式</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "          <input type=\"radio\"  name=\"act\" value=\"fg\" title=\"覆盖\" checked=\"\">\n" +
+                        "          <input type=\"radio\"  name=\"act\" value=\"zj\" title=\"追加\">\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "    <div class=\"layui-form-item layui-form-text\">\n" +
+                        "        <label class=\"layui-form-label\">修改内容</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "            <textarea placeholder=\"请输入内容\" class=\"layui-textarea\" id=\"bcontent\"></textarea>\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "</div>\n" +
+                        "</body>",
+                         yes: function(index, layero){
+                            layer.close(index);
+                            loading=layer.load(1, {shade: [0.8, '#393D49']});
+                            var json_data=data;
+                            console.log(json_data);
+                            console.log($("input[type='radio']:checked").val());
+                            var json_data=data;
+                            for(var n_key in json_data){
+                                var url=json_data[n_key]['api_table_name'];
+                                var yuan_ip=json_data[n_key]['load_balance'];
+                                var bid=$("#bid").val();
+                                var cid=$("#cid").val();
+                                var bcontent=$("#bcontent").val();
+                                var act=$("input[type='radio']:checked").val();
+                                if($("#cid").val()=="1"){
+                                    AddRequestArray(url,cid,bid,bcontent,act,yuan_ip);
+                                    count1 = parseInt(n_key)+1;
+                                }else{
+                                    get_all_urls_data(url,cid);
+                                    var all_data=return_data.data;
+                                    for(var post_key in all_data){
+                                        var post_url=all_data[post_key]['page_url'];
+                                        var post_crc32=CRC32.str(post_url);
+                                        post_crc32=sprintf(post_crc32);
+                                        add_cache_arr(post_url,post_crc32,bid,bcontent,yuan_ip,act);
+                                    }
+                                }
+
+                            }
+                        },
+                });
+                form.render();
+            },reload: function(){
+                 var str = $("#link_url").val()
+                 var arr=str.split(' ');
+                 var json = JSON.stringify(arr);
+                 table.reload('url_list', {
+                    url: '/zzl_search',
+                    method: 'POST',
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        api_table_name:json
+                    }
+
+                 });
+            },delcache: function() {
+                var checkStatus = table.checkStatus('url_list')
+                ,data = checkStatus.data;
+                var arr=[];
+                for(var n_key in data){
+                    arr.push(data[n_key]['id']);
+                }
+                var json = JSON.stringify(arr);
+                $.ajax({
+                    type:'POST',
+                    url:'/update_del_time',
+                    async: false,
+                    dataType:'json',
+                    data:{data:json},
+                    success:function(data){
+                        if(data.msg=="ok"){
+                            $.ajax({
+                                type:'POST',
+                                url:'/all_web_data',
+                                async: false,
+                                dataType:'json',
+                                success:function(data1){
+                                    var arr_data=[];
+                                    for(var n_key in data1){
+                                        arr_data.push([data1[n_key]['api_table_name'],data1[n_key]['docker_ip'],data1[n_key]['del_time']]);
+                                    }
+                                    var json = JSON.stringify(arr_data);
+                                    $.ajax({
+                                        type:'POST',
+                                        url:'http://api.shawdo.com/api/admin/public/ajax_save_json',
+                                        dataType:'json',
+                                        data:{data:json,types:"del"},
+                                        success:function(data){
+                                            layer.msg("批量清理CDN缓存请求成功，3~5分钟方能生效");
+                                            setTimeout("window.location.reload()",3000);
+                                        },error:function(jqXHR){
+                                            layer.msg("IP被封，请求失败请联系管理员");
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                    }
+                });
+            },config_edit: function() {
+                var checkStatus = table.checkStatus('url_list')
+                ,data = checkStatus.data;
+                $.ajax({
+                    type: 'POST',
+                    url: '/get_all_idc',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log(data);
+                        var str = "";
+                        for (var key in data) {
+                            str += "<option value=\"" + data[key]['IDC_SSH_IP'] + "\">" + data[key]['idc_NAME']+ data[key]['IDC_SSH_IP'] + "</option>";
+                        }
+                        $("#docker_cdn").html(str);
+                        form.render();
+                    }
+                });
+                layer.open({
+                    title: '批量修改',
+                    area:["30%","40%"],
+                    content:"<body>\n" +
+                        "<div class=\"layui-form layui-form-pane\">\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">docker</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "            <select id=\"docker_cdn\">\n" +
+                        "            </select>\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">负载均衡IP</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "           <input type=\"text\" id=\"load_balance_ip\" class=\"layui-input\">" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "</div>\n" +
+                        "</body>",
+                    yes: function(index, layero){
+                        layer.close(index);
+                        loading=layer.load(1, {shade: [0.8, '#393D49']});
+                        var json_data=data;
+                        for(var n_key in json_data){
+                            var docker_ip = $("#docker_cdn").val();
+                            var load_balance_ip = $("#load_balance_ip").val();
+                            var id = json_data[n_key]['id'];
+                            add_docker_ip(id,docker_ip,load_balance_ip);
+                        }
+                    },
+                });
+                form.render();
+            },cache_config_edit: function() {
+                var checkStatus = table.checkStatus('url_list')
+                ,data = checkStatus.data;
+                layer.open({
+                    title: '批量修改',
+                    area:["40%","40%"],
+                    content:"<body>\n" +
+                        "<div class=\"layui-form layui-form-pane\">\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">页面分类</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "            <select id=\"cid\">\n" +
+                        "                <option value=\"1\">首页</option>\n" +
+                        "                <option value=\"2\">栏目页</option>\n" +
+                        "                <option value=\"3\">内容页</option>\n" +
+                        "                <option value=\"4\">其他页</option>\n" +
+                        "            </select>\n" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "    <div class=\"layui-form-item\">\n" +
+                        "        <label class=\"layui-form-label\">缓存周期</label>\n" +
+                        "        <div class=\"layui-input-block\">\n" +
+                        "<input type=\"text\" id=\"deadline\" placeholder=\"单位（秒）\" class=\"layui-input\">" +
+                        "        </div>\n" +
+                        "    </div>\n" +
+                        "</div>\n" +
+                        "</body>",
+                    yes: function(index, layero){
+                        layer.close(index);
+                        loading=layer.load(1, {shade: [0.8, '#393D49']});
+                        var json_data=data;
+                        for(var n_key in json_data){
+                            var cid = $("#cid").val();
+                            var time_cycle = $("#deadline").val();
+                            var host_name = json_data[n_key]['api_table_name'];
+                            var webcf_id = json_data[n_key]['id'];
+                            var idc_ip = json_data[n_key]['load_balance'];
+                            add_cache_config(webcf_id,cid,time_cycle,host_name,idc_ip);
+                        }
+                    },
+                });
+                form.render();
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        $.ajax({
+            type: 'POST',
+            url: '/get_all_docker_ip',
+            dataType: 'json',
+            success: function (data) {
+                console.log(data[0].docker_ip);
+                var str = "<option value=\"\">默认</option>";;
+                for (var key in data) {
+                    str += "<option value=\"" + data[key].docker_ip + "\">" + data[key].docker_ip+"</option>";
+                }
+                $("#docker_ip").html(str);
+                form.render();
+            }
+        });
+
+
+        form.on('select(docker_ip)', function(data){
+            console.log(data.value); //得到被选中的值
+            table.reload('url_list', {
+                url: '/get_all_docker_ip_data',
+                method: 'POST',
+                page: {
+                    curr: 1 //重新从第 1 页开始
+                },where: {
+                    type: "m.",
+                    order: "desc",
+                    field: "web_status",
+                    docker_ip:""+data.value
+                },
+
+            });
+        });
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/url_list',
+            page: true,
+            limits:[10,100,500,1000,5000],
+            id:'url_list',
+            autoSort: false,
+            where: {
+                type: "m.",
+                order: "desc",
+                field: "web_status",
+            },
+            cols: [[ //表头
+                {type:'checkbox', fixed: 'left'},
+                {title:"URL",sort: true, fixed: 'left', templet: function(d){return '<a href="http://'+d.api_table_name+'/install/index.php?step=3&value1=sz1-nei.rds.kuadu.net&value2='+d.db_user+'&value3='+d.db_pass+'&value4='+d.db_name+'">'+d.api_table_name+'</a>'}},
+                {field: 'config', title: '文章发布规则', fixed: 'left'},
+                {field: 'cache_config', title: '缓存规则', fixed: 'left'},
+                {field: 'web_status', title: '网站情况（点击查看）',sort: true, fixed: 'left'},
+                {fixed: 'right', title:"是否开启监控", align:'center', templet: function(d){
+                    if(d.jk404_status==0){
+                        return '<div class="layui-form-item">\n' +
+                        '    <div class="demoTable">\n' +
+                        '      <input type="checkbox" class="layui-btn" lay-skin="switch" lay-text="ON|OFF"  lay-filter="on_close"  data-type="on_close" lay-param="'+d.id+'">\n' +
+                        '    </div>\n' +
+                        '  </div>';
+                    }else if(d.jk404_status==1){
+                        return '<div class="layui-form-item">\n' +
+                        '    <div class="demoTable">\n' +
+                        '      <input type="checkbox" class="layui-btn" lay-skin="switch" lay-text="ON|OFF"  lay-filter="on_close" checked  data-type="on_close" lay-param="'+d.id+'">\n' +
+                        '    </div>\n' +
+                        '  </div>';
+                    }
+                    }},
+                {fixed: 'right', title:"操作", width:300, align:'center', templet: function(d){return '<a href="update_website_page/'+d.id+'" class="layui-btn layui-btn-xs">站点设置</a><a href="/batch-edit/'+d.api_table_name+'" class="layui-btn layui-btn-normal layui-btn-xs">内页列表</a><a href="javascript:;" class="layui-btn layui-btn-danger layui-btn-xs" onclick="tipDel(\''+d.id+'\',\''+d.api_table_name+'\',\''+d.db_name+'\')">删除站点</a>'}}
+            ]]
+        });
+
+        table.on('sort(demo)', function(obj){
+            console.log(obj);
+            table.reload('url_list', {
+                initSort: obj //记录初始排序，如果不设的话，将无法标记表头的排序状态。
+                ,where: { //请求参数（注意：这里面的参数可任意定义，并非下面固定的格式）
+                    field: obj.field //排序字段
+                    ,order: obj.type //排序方式
+                }
+            });
+        });
+    });
+
+
+
+
+    var return_data;
+    function get_all_urls_data(host_name,cid) {
+        $.ajax({
+            type:'POST',
+            url:'/get_all_cid_hostname',
+            dataType:'json',
+            data:{host_name:host_name,cid:cid},
+            async: false,
+            success:function(data){
+                return_data=data;
+            }
+        });
+
+    }
+
+    var post_yuan_ip="";
+    function get_yuan_ip(api_table_name) {
+        $.ajax({
+            type:'POST',
+            url:'/get_yuan_ip',
+            dataType:'json',
+            data:{api_table_name:api_table_name},
+            async: false,
+            success:function(data){
+                post_yuan_ip=data[0]['yuan_ip'];
+            }
+        });
+    }
+
+
+    //更新源站缓存队列
+    var update_docker_ip_arr=[];
+    //加入请求队列
+	function add_docker_ip(id,docker_ip,load_balance_ip)
+	{
+	        var Item = [];
+	        Item[0]=id;
+	        Item[1]=docker_ip;
+	        Item[2]=load_balance_ip;
+	        update_docker_ip_arr.push(Item);     //将当前请求添加到队列末尾
+	        if(update_docker_ip_arr.length==1)  //如果请求队列里只有当前请求立即要求执行队列，如果有其他请求，那么就不要求执行队列
+	        {
+	            Exedockerarr();
+	        }
+	}
+
+	//执行队列里的顺序第一个的请求
+	function Exedockerarr()
+	{
+	    if( update_docker_ip_arr.length==0)  //如果队列里有请求执行 AJAX请求
+	    {
+	        layer.close(loading);
+	        setTimeout("window.location.reload()",1000);
+	    }
+	    if( update_docker_ip_arr.length>0)  //如果队列里有请求执行 AJAX请求
+	    {
+	        var ArgItem = update_docker_ip_arr[0];
+	        update_docker_ip(ArgItem[0],ArgItem[1],ArgItem[2]);
+	    }
+	}
+
+
+    function update_docker_ip(id,docker_ip,load_balance_ip){
+        $.ajax({
+            type:'POST',
+            url:'/update_docker_ip',
+            dataType:'json',
+            data:{id:id,docker_ip:docker_ip,load_balance:load_balance_ip},
+            success:function(data){
+                if(data.success=="success"){
+                    update_docker_ip_arr.shift();
+                    Exedockerarr();
+                }
+            }
+        });
+    }
+
+
+
+
+    //更新源站缓存队列
+    var cache_arr=[];
+	function add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip,act)
+	{
+	        var Item = [];
+	        Item[0]=y_page_url;
+	        Item[1]=crc32;
+	        Item[2]=tf_block;
+	        Item[3]=content;
+	        Item[4]=yuan_ip;
+	        Item[5]=act;
+	        cache_arr.push(Item);     //将当前请求添加到队列末尾
+	        if(cache_arr.length==1)  //如果请求队列里只有当前请求立即要求执行队列，如果有其他请求，那么就不要求执行队列
+	        {
+	            console.log(cache_arr);
+	            Execachearr();
+	        }
+	}
+
+	function Execachearr()
+	{
+        if(cache_arr.length==0){
+            layer.close(loading);
+            layer.open({
+                title: '推送结果',
+                content:
+                   '失败的结果（'+post_error_arr.length+'）:'+post_error_arr+'<br>'+
+                   '出现的异常记录：'+yichang,
+                yes: function(index, layero){
+                    setTimeout("window.location.reload()",1000);
+                }
+            });
+        }
+	    if( cache_arr.length>0)  //如果队列里有请求执行 AJAX请求
+	    {
+	        var ArgItem = cache_arr[0];
+	        post_del_cache(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4],ArgItem[5]);
+	    }
+	}
+
+
+	var post_error_arr=[];
+	var yichang=[];
+    function post_del_cache(y_page_url,crc32,tf_block,content,yuan_ip,act){
+	    var str1 = y_page_url;
+        var reg1 = /^[^\/]*\/[^\/]*\/[^\/]*\//;
+        str1 = str1.replace(reg1, "c_cache/");
+        var str2 = y_page_url;
+        var reg2 =  /^[^\/]*\/[^\/]*\/[^\/]*\//;
+        str2 = str2.match(reg2)[0];
+        var cache_url=str2+str1;
+	    $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/oneDataUpdate',
+            dataType:'json',
+            data:{url:y_page_url,crc32:crc32,bid:tf_block,bcontent:content,ip:yuan_ip,act:act},
+            async:false,
+            success:function(data){
+                //删除CDN缓存
+                $.ajax({
+                    type:'GET',
+                    url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                    dataType:'json',
+                    async:false,
+                    data:{url:y_page_url,crc32:crc32,ip:yuan_ip},
+                    success:function(data1){
+                        if(data1.errorCode==200){
+                            var index=layer.open({
+                                shadeClose:true,
+                                type: 2,
+                                content: cache_url,
+                            });
+                            layer.close(index);
+                            cache_arr.shift();  //移除已完成请求
+                            {#setTimeout("Execachearr()",5000);//延时5秒执行请求#}
+                            Execachearr();//执行队列请求
+                        }else if(data1.errorCode==0){
+                            yichang.push(y_page_url+"删除json缓存失败");
+                            post_error_arr.push(y_page_url);
+                            cache_arr.shift();  //移除已完成请求
+                            {#setTimeout("Execachearr()",5000);//延时5秒执行请求#}
+                            Execachearr();//执行队列请求
+                        }
+                    },error:function(jqXHR){
+                        yichang.push(y_page_url+"删除json缓存请求失败");
+                        post_error_arr.push(y_page_url);
+                        cache_arr.shift();  //移除已完成请求
+                        {#setTimeout("Execachearr()",5000);//延时5秒执行请求#}
+                        Execachearr();//执行队列请求
+                    }
+                });
+                //删除CDN缓存end
+            },error:function(jqXHR){
+                yichang.push(y_page_url+"数据更新请求失败");
+                post_error_arr.push(y_page_url);
+                cache_arr.shift();  //移除已完成请求
+                {#setTimeout("Execachearr()",5000);//延时5秒执行请求#}
+                Execachearr();//执行队列请求
+            }
+        });
+    }
+
+
+
+
+
+
+	function AddRequestArray(url,cid,bid,bcontent,act,yuan_ip)
+	{
+	        var Item = [];
+	        Item[0]=url;
+	        Item[1]=cid;
+	        Item[2]=bid;
+	        Item[3]=bcontent;
+	        Item[4]=act;
+	        Item[5]=yuan_ip;
+	        RequestArray.push(Item);
+	        if(RequestArray.length==1)
+	        {
+	            console.log(RequestArray);
+	            ExeRequestArray();
+	        }
+	}
+
+	function ExeRequestArray()
+	{
+	    if(RequestArray.length==0){
+               layer.open({
+                title: '推送结果',
+                content: '处理数量：'+count1+'<br>'+
+                   '失败的结果（'+post_error_arr.length+'）:'+post_error_arr+'<br>'+
+                   'website中不存在的记录（'+no_yuan_ip_arr.length+'）：'+no_yuan_ip_arr+'<br>'+
+                   '出现的异常记录：'+yichang,
+                yes: function(index, layero){
+                    setTimeout("window.location.reload()",1000);
+                }
+            });
+        }
+	    if( RequestArray.length>0)
+	    {
+	        var ArgItem = RequestArray[0];
+	        post_data(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4],ArgItem[5]);
+	    }
+	}
+
+
+	var post_error_arr=[];
+	var no_yuan_ip_arr=[];
+	var yichang=[];
+	function post_data(url,cid,bid,bcontent,act,yuan_ip){
+
+	    $.ajax({
+            type:'POST',
+            url:'/get_webcf',
+            dataType:'json',
+            data:{api_table_name: url},
+            success:function(mm_data){
+                if(url.indexOf("m.")==0){
+                    var url2=mm_data[0].m_url;
+                }else{
+                    var url2=mm_data[0].web_url;
+                }
+                var crc32=CRC32.str(url2);
+                crc32=sprintf(crc32);
+                $.ajax({
+                    type:'GET',
+                    url:'http://api.shawdo.com/api/admin/public/dataTableUpdate',
+                    dataType:'json',
+                    data:{url:url,cid:cid,bid:bid,bcontent:bcontent,act:act},
+                    async:false,
+                    success:function(data){
+                        if(data.success){
+                            $.ajax({
+                                type:'GET',
+                                url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                                dataType:'json',
+                                data:{url:url2,crc32:crc32,ip:yuan_ip},
+                                async:false,
+                                success:function(data1){
+                                    if(data1.errorCode==200){
+                                        layer.open({
+                                            shadeClose:true,
+                                            type: 2,
+                                            content: url2+"c_cache/",
+                                        });
+                                        layer.msg("已完成"+Math.round((1-RequestArray.length/count1)*100)+"%");
+                                        RequestArray.shift();  //移除已完成请求
+                                        {#setTimeout("ExeRequestArray()",5000);//延时5秒执行请求#}
+                                        ExeRequestArray();//执行队列请求
+                                    }else if(data1.errorCode==0){
+                                        yichang.push(url+"删除json缓存失败");
+                                        post_error_arr.push(url);
+                                        RequestArray.shift();  //移除已完成请求
+                                        setTimeout("ExeRequestArray()",5000);//延时5秒执行请求
+                                        {#ExeRequestArray();//执行队列请求#}
+                                    }
+                                },
+                                error:function(jqXHR){
+                                    yichang.push(url+"删除json缓存请求失败");
+                                    post_error_arr.push(url);
+                                    RequestArray.shift();  //移除已完成请求
+                                    {#setTimeout("ExeRequestArray()",5000);//延时5秒执行请求#}
+                                    ExeRequestArray();//执行队列请求
+                                }
+                            });
+
+                        }else{
+                            yichang.push(url+"api.shawdo.com数据更新失败");
+                            post_error_arr.push(url);
+                            {#setTimeout("ExeRequestArray()",5000);//延时5秒执行请求#}
+                            ExeRequestArray();//执行队列请求
+                        }
+                    },
+                    error:function(jqXHR){
+                        yichang.push(url+"api.shawdo.com数据更新接口请求失败");
+                        post_error_arr.push(url);
+                        {#setTimeout("ExeRequestArray()",5000);//延时5秒执行请求#}
+                        ExeRequestArray();//执行队列请求
+                    }
+                });
+
+            }
+        });
+    };
+
+
+
+
+	$("#search").click(function () {
+        var str = $("#link_url").val()
+        var arr=str.split(' ');
+        console.log(arr);
+        var count=arr.length;
+        var json = JSON.stringify(arr);
+
+        $.ajax({
+            type:'POST',
+            url:'/zzl_search_tips',
+            dataType:'json',
+            data:{api_table_name:json},
+            async: false,
+            success:function(data){
+                var return_arr=[];
+                for(var key in data.data){
+                    return_arr.push(data.data[key]['api_table_name']);
+                }
+                console.log(return_arr);
+                arr_dive(arr,return_arr);
+                console.log(arr_cha);
+                if(return_arr.length!=count){
+                    layer.open({
+                        title: '数据库中不存在的结果',
+                        content:""+arr_cha,
+                        shadeClose:true,
+                    });
+                }
+            }
+        });
+    });
+	//求差集
+    var arr_cha=[];
+    function arr_dive(aArr,bArr){ //第一个数组减去第二个数组
+    　　if(bArr.length==0){return aArr}
+    　　var diff=[];
+    　　var str=bArr.join("&quot;&quot;");
+    　　for(var e in aArr){
+    　　if(str.indexOf(aArr[e])==-1){
+    　　　　diff.push(aArr[e]);
+    　　　　}
+    　　}
+    　　arr_cha=diff;
+    }
+
+
+
+
+
+
+    //缓存规则队列
+    var update_cache_config_arr=[];
+    var update_cache_config_error_arr=[];
+	function add_cache_config(webcf_id,cid,time_cycle,host_name,idc_ip)
+	{
+	        var Item = [];
+	        Item[0]=webcf_id;
+	        Item[1]=cid;
+	        Item[2]=time_cycle;
+	        Item[3]=host_name;
+	        Item[4]=idc_ip;
+	        update_cache_config_arr.push(Item);
+	        if(update_cache_config_arr.length==1)
+	        {
+	            Execacheconfigrarr();
+	        }
+	}
+
+	//执行队列里的顺序第一个的请求
+	function Execacheconfigrarr()
+	{
+	    if( update_cache_config_arr.length==0)  //队列完成执行
+	    {
+            layer.close(loading);
+            if(update_cache_config_error_arr.length>0){
+                layer.open({
+                    title: '处理结果',
+                    content:""+update_cache_config_error_arr,
+                    shadeClose:true,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }else{
+                layer.msg("配置已生效");
+                setTimeout("window.location.reload()",1000);
+            }
+
+	    }
+	    if( update_cache_config_arr.length>0)
+	    {
+	        var ArgItem = update_cache_config_arr[0];
+	        update_deadline(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4]);
+	    }
+	}
+
+
+    function update_deadline(webcf_id,cid,time_cycle,host_name,idc_ip){
+	    var web_domain=host_name.replace(/\./g,"_");
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/add_c_cache_web_list',
+            dataType:'json',
+            data:{type:8,webcf_id:webcf_id,web_domain:web_domain,act:"add",cid:cid,time_cycle:time_cycle,idc_ip:idc_ip},
+            success:function(data){
+                if(data.code=="1"){
+                    update_cache_config_arr.shift();
+                    Execacheconfigrarr();
+                }else if(data.code=="0"){
+                    update_cache_config_arr.shift();
+                    update_cache_config_error_arr.push(data.msg+host_name);
+                    Execacheconfigrarr();
+                }
+            }
+        });
+    }
+
+
+    function tip(id,table_name,db_name){
+        layer.open({
+          title: '提示',
+          content: '确定要删除此站点吗？',
+          btn:['确定','取消'],
+          yes: function(index, layero){
+              del_website(id,table_name,db_name);  
+            }
+        });     
+    }
+
+
+    function tipDel(id,table_name,db_name){
+       tip(id,table_name,db_name)
+    }
+
+
+    function del_website(id,table_name,db_name) {
+	    var loading=layer.load(1, {shade: [0.8, '#393D49']});
+        $.ajax({
+            type:'POST',
+            url:'/del_website',
+            dataType:'json',
+            data:{id:id},
+            success:function(django_data){
+                if(django_data.msg=="success"){
+                    var m_table_name=table_name;
+                    m_table_name=m_table_name.replace(/^www./,"");
+                    m_table_name="m."+m_table_name;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/del_table',
+                        dataType:'json',
+                        async:false,
+                        data:{table_name:m_table_name},
+                        success:function(data){
+
+                        }
+                    });
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/del_table',
+                        dataType:'json',
+                        async:false,
+                        data:{table_name:table_name},
+                        success:function(data){
+                            $.ajax({
+                                type:'POST',
+                                url:"/push_pod_cdn_group",
+                                dataType:'json',
+                                async:false,
+                                data:{pod_name:django_data.cdn_pod_name,docker_ip:django_data.docker_ip},
+                                success:function(data_cdn){
+                                    if(data_cdn.msg=="ok"){
+                                        var res_data=data_cdn.data;
+                                        var idc_ip=data_cdn.idc_ip;
+                                        var web_arr=[];
+                                        for(var key in res_data){
+                                            var other_name=res_data[key]['other_name'];
+                                            var other=other_name.split(',');
+                                            var web={
+                                                domain:res_data[key]['api_table_name'],
+                                                yuan_ip:res_data[key]['yuan_ip'],
+                                                other_domain:other
+                                            };
+                                            web_arr.push(web);
+                                        }
+                                        var post_data={
+                                                pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,
+                                                web:web_arr
+                                            };
+                                        var json=JSON.stringify(post_data);
+                                        console.log(json);
+                                        var type=4;
+                                        $.ajax({
+                                            type:'POST',
+                                            url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                            dataType:'json',
+                                            async:false,
+                                            data:{data:json,type:type,idc_ip:idc_ip},
+                                            success:function(data2){
+                                                layer.msg(data2.msg);
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+
+                            $.ajax({
+                                type:'POST',
+                                url:"/push_pod_yuan_group",
+                                dataType:'json',
+                                async:false,
+                                data:{pod_name:django_data.yuan_pod_name,yuan_ip:django_data.yuan_ip},
+                                success:function(data_yuan){
+                                    if(data_yuan.msg=="ok"){
+                                        layer.msg("pod_yuan分组成功");
+                                        var res_data=data_yuan.data;
+                                        var idc_ip=data_yuan.idc_ip;
+                                        var web_arr=[];
+                                        for(var key in res_data){
+                                            var other_name1=res_data[key]['other_name'];
+                                            var other1=other_name1.split(',');
+                                            var web={
+                                                domain:res_data[key]['api_table_name'],
+                                                other_domain:other1
+                                            };
+                                            web_arr.push(web);
+                                        }
+                                        var post_data={
+                                                pod:"web"+data_yuan.pod_name+"-"+data_yuan.num,
+                                                web:web_arr
+                                            };
+                                        var json=JSON.stringify(post_data);
+                                        console.log(json);
+                                        var type=3;
+                                        $.ajax({
+                                            type:'POST',
+                                            url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                            dataType:'json',
+                                            async:false,
+                                            data:{data:json,type:type,idc_ip:idc_ip},
+                                            success:function(data2){
+                                                layer.msg(data2.msg);
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                            //删除rds数据库
+                            $.ajax({
+                                type:'POST',
+                                url:'http://api.shawdo.com/api/admin/public/DeleteDatabase',
+                                dataType:'json',
+                                async:false,
+                                data:{DBName:db_name},
+                                success:function(data){
+                                    $.ajax({
+                                        type:'GET',
+                                        url:data,
+                                        dataType:'json',
+                                        async:false,
+                                        success:function(data1){
+                                            layer.open({
+                                                title: '处理结果',
+                                                shadeClose:true,
+                                                content:
+                                                   "删除成功",
+                                                end: function(index, layero){
+                                                    layer.close(loading);
+                                                    setTimeout("window.location.reload()",1000);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                }
+            }
+        });
+    }
+
+</script>

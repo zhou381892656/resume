@@ -1,0 +1,81 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                添加节点：
+            </blockquote>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">ide_name</label>
+                <div class="layui-input-block">
+                    <input type="text" placeholder="请输入ide_name" class="layui-input" id="zz_ide_name">
+                </div>
+
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">ssh_ip</label>
+                <div class="layui-input-block">
+                    <input type="text" placeholder="请输入ide_ssh_ip" class="layui-input" id="zz_ide_ssh_ip">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">ssh_port</label>
+                <div class="layui-input-block">
+                    <input type="text" placeholder="请输入ide_ssh_port" class="layui-input" id="zz_ide_ssh_port">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">user</label>
+                    <div class="layui-input-block">
+                        <input type="text" placeholder="请输入user" class="layui-input" id="zz_user">
+                    </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-block">
+                  <input type="text" placeholder="请输入密码" class="layui-input" id="password">
+                </div>
+            </div>
+
+            <div class="layui-form-item" pane>
+                <label class="layui-form-label">IDE_TYPE</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="IDC_TYPE" value="yuan" title="源-服务器" checked>
+                    <input type="radio" name="IDC_TYPE" value="cdn" title="CDN-服务器">
+                    <input type="radio" name="IDC_TYPE" value="load" title="负载均衡-服务器">
+                    <input type="radio" name="IDC_TYPE" value="nei" title="内网IP">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <button class="layui-btn" lay-submit lay-filter="formDemo" id="put_now">立即提交</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script>
+    $("#put_now").click(function () {
+        $.ajax({
+            type:'POST',
+            url:'/zzlsave',
+            dataType:'json',
+            data:{idc_NAME:$("#zz_ide_name").val(),IDC_SSH_IP:$("#zz_ide_ssh_ip").val(),IDC_SSH_PORT:$("#zz_ide_ssh_port").val(),IDC_SSH_USER:$("#zz_user").val(),IDC_SSH_PASS:$("#password").val(),IDC_TYPE: $("input[name='IDC_TYPE']:checked").val()},
+            success:function(data){
+                if(data.msg=="ok") {
+                    layer.msg("添加成功");
+                    setTimeout("window.location.reload()", 1000);
+                }
+            }
+        });
+    });
+
+</script>

@@ -1,0 +1,84 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                选择建站程序：
+            </blockquote>
+            <div class="layui-form-item">
+                <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                    <a href="/update_website_page/{{ id }}" style="color:deepskyblue"><span style="color:deepskyblue">站点信息设置</span></a>
+                    <a href="/zzl-task-config/{{ id }}"><span style="color:deepskyblue">文章发布规则设置</span></a>
+                    <a href="/cache_config_list/{{ api_table_name }}"><span style="color:deepskyblue">站点缓存规则设置</span></a>
+                    <a href="/check_cms_page/{{ id }}"><span style="color:deepskyblue">建站程序</span></a>
+                </span>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">选择建站CMS系统</label>
+                <div class="layui-input-inline">
+                    <select id="cms">
+                        <option value="likezu.zip">李可组</option>
+                        <option value="yun1.zip">孕1</option>
+                        <option value="yun2.zip">孕2</option>
+                        <option value="yun105.zip">孕105</option>
+                        <option value="yun106.zip">孕106</option>
+                        <option value="yun107.zip">孕107</option>
+                        <option value="xiaoshuozhan.zip">小说站</option>
+                        <option value="ziyuanzhan.zip">资源站</option>
+                        <option value="ziyuanzhan1.zip">资源站1</option>
+                        <option value="ziyuanzhan2.zip">资源站2</option>
+                        <option value="ziyuanzhan3.zip">资源站3</option>
+                        <option value="ziyuanzhan4.zip">资源站4</option>
+                        <option value="ziyuanzhan5.zip">资源站5</option>
+                        <option value="ziyuanzhan6.zip">资源站6</option>
+                        <option value="wdede57.zip">wdede57</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">选择建站程序包</div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">确认选择</button>
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    $("#ok").click(function(){
+        $.ajax({
+            type:'POST',
+            url:"/add_cms",
+            dataType:'json',
+            async:false,
+            data:{web_id:{{ param }}, cms_url:$("#cms").val()},
+            success:function(data_yuan){
+                if(data_yuan.msg=="ok"){
+                    var res_data=data_yuan.data;
+                    var web={
+                        domain:res_data[0]['api_table_name'],
+                        url:res_data[0]['cms_url']
+                    };
+                    var post_data={
+                            pod:"web"+data_yuan.pod_name+"-10",
+                            web:web
+                        };
+                    var json=JSON.stringify(post_data);
+                    console.log(json);
+                    var type=6;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                        dataType:'json',
+                        async:false,
+                        data:{data:json,type:type,idc_ip:"{{ yuan_ip }}"},
+                        success:function(data){
+                            layer.msg(data.msg);
+                        }
+                    });
+                }
+            }
+        });
+    });
+</script>

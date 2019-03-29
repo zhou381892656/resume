@@ -1,0 +1,70 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                网站总体数据列表：
+            </blockquote>
+{#            <div class="layui-form-item">#}
+{#                <div class="layui-inline">#}
+{#                    <div class="layui-input-inline">#}
+{#                        <input type="text" id="link_url" placeholder="请输入URL" class="layui-input">#}
+{#                    </div>#}
+{#                </div>#}
+{#                <div class="layui-inline">#}
+{#                    <div class="demoTable">#}
+{#                        <button class="layui-btn" data-type="reload" id="search">查询</button>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form','table'], function(){
+        var table = layui.table;
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/show_data_list',
+            page: true,
+            autoSort: false,
+            where: {
+                order: "desc",
+                field: "qwe",
+            },
+            cols: [[ //表头
+                    {field: 'api_table_name', title: '域名',sort: true, fixed: 'left'},
+                    {field: 'qwe', title:"日志流量",sort: true, fixed: 'left' },
+                    {field: 'qwe4', title:"百度收录量",sort: true, fixed: 'left'},
+                    {field: 'qwe2', title:"百度爬虫数",sort: true, fixed: 'left'},
+                    {field: 'qwe3', title:"谷歌爬虫数",sort: true, fixed: 'left'},
+                    {field: 'qwe5', title:"页面数量",sort: true, fixed: 'left'},
+                    {fixed: 'right', title:"有效时间",align:'center', templet: function(d){
+                            var times = new Date(parseInt(d.fec_time)*1000).toLocaleString().replace(/:\d{1,2}$/,' ');
+                            return times;
+
+                    }},
+                ]]
+        });
+        table.on('sort(demo)', function(obj){
+            console.log(obj);
+            table.reload('demo', {
+                initSort: obj //记录初始排序，如果不设的话，将无法标记表头的排序状态。
+                ,where: { //请求参数（注意：这里面的参数可任意定义，并非下面固定的格式）
+                    field: obj.field //排序字段
+                    ,order: obj.type //排序方式
+                }
+            });
+        });
+    });
+</script>

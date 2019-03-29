@@ -1,0 +1,48 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                RDS列表：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <a href="/add_rds" class="layui-btn layui-btn-danger">新增</a>
+                    </div>
+                </div>
+            </div>
+            <div class="main">
+                <table id="demo" lay-filter="demos"></table>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script type="text/javascript">
+
+layui.use(['table','form'], function(){
+  var table = layui.table;
+  var form = layui.form;
+  //第一个实例
+  table.render({
+    elem: '#demo'
+    ,method: 'POST'
+    ,url: '/rds_server_list' //数据接口
+    ,page: true //开启分页
+    ,cols: [[ //表头
+      {field: 'id', title: 'ID', width:80, sort: true, fixed: 'left'}
+      ,{field: 'rds_name', title: '别名',}
+      ,{field: 'rds_city', title: '地区', sort: true}
+      ,{field: 'w_ip', title: '外网地址'}
+      ,{field: 'webnum', title: '网站数量', sort: true}
+    ]]
+  });
+  
+});
+</script>

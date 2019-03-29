@@ -1,0 +1,48 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                内链分配列表：
+            </blockquote>
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+        <div class="layui-footer">
+            <button class="layui-btn layui-btn-danger layui-btn-xs" id="getnewdata">获取网站cdn_ip</button>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+
+    $("#getnewdata").click(function () {
+        var index=layer.load(1, {shade: [0.8, '#393D49']});
+        $.ajax({
+            type:'POST',
+            url:'/update_cdn_ip',
+            dataType:'json',
+            success:function(data){
+                layer.close(index);
+            }
+        });
+    });
+    layui.use(['form','table'], function(){
+        var table = layui.table;
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/olink_auto_lists',
+            page: true,
+            cols: [[ //表头
+                {field: 'status', title: '状态',sort: true, fixed: 'left',width:200},
+                {fixed: 'right', title:"被投放的的URL（点击可查看）", align:'center', templet: function(d){return '<a href="'+d.url1+'">'+d.title1+'</a>'}},
+                {fixed: 'right', title:"投放的URL（点击可查看）", align:'center', templet: function(d){return '<a href="'+d.url2+'">'+d.title2+'</a>'}}
+            ]]
+        });
+    });
+
+</script>

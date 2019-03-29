@@ -1,0 +1,255 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <div class="layui-form">
+                <blockquote class="layui-elem-quote">
+                    内链管理：
+                </blockquote>
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <button class="layui-btn layui-btn-normal" id="push">推送</button>
+                        </div>
+                    </div>
+                </div>
+                <table id="demo" lay-filter="demo"></table>
+                <script type="text/html" id="barDemo">
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                </script>
+            </div>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var yuan_ip="";
+    var tf_block="";
+    $.ajax({
+        type:'POST',
+        url:'/get_webcf',
+        dataType:'json',
+        data:{webcf_id:{{ y_webcf_id }}},
+        async: false,
+        success:function(data){
+            yuan_ip=data[0]['yuan_ip'];
+        }
+    });
+    var page_data=[];
+    $.ajax({
+        type:'POST',
+        url:'/get_page_distinct',
+        dataType:'json',
+        data:{y_webcf_id:{{ y_webcf_id }}},
+        success:function(data){
+            page_data=data;
+        }
+    });
+    $("#push").click(function() {
+        if(page_data.length==0){
+            layer.msg("没有可以推送的页面");
+        }
+        for(var i=0;i<page_data.length;i++){
+            var y_page_url=page_data[i]['y_page_url'];
+            console.log(y_page_url);
+            var crc32=CRC32.str(y_page_url);
+            crc32=sprintf(crc32);
+            var content="";
+            $.ajax({
+                type:'POST',
+                url:'/push_olink',
+                dataType:'json',
+                async: false,
+                data:{y_page_url:y_page_url,y_webcf_id:{{ y_webcf_id }}},
+                success:function(data){
+                    for(var key in data){
+                        tf_block=data[key]['tf_block'];
+                        if(data[key]['status']==1){
+                           content += "<a href=\""+data[key]['tf_url']+"\">"+data[key]['tf_key']+"</a>    ";
+                        }else if(data[key]['status']==3){
+                            content += "";
+                        }
+                        cache_count = key;
+
+                    }
+
+                }
+            });
+            add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip);
+        }
+    });
+
+
+
+
+
+    var cache_count="";
+   //更新源站缓存队列
+    var cache_arr=[];
+	function add_cache_arr(y_page_url,crc32,tf_block,content,yuan_ip)
+	{
+	        var Item = [];
+	        Item[0]=y_page_url;
+	        Item[1]=crc32;
+	        Item[2]=tf_block;
+	        Item[3]=content;
+	        Item[4]=yuan_ip;
+	        cache_arr.push(Item);
+	        if(cache_arr.length==1)
+	        {
+	            Execachearr();
+	        }
+	}
+
+
+	function Execachearr()
+	{
+	    var loading=layer.load(1, {shade: [0.8, '#393D49']});
+	    if(cache_arr.length==0){
+	        layer.close(loading);
+            layer.open({
+                title: '推送结果',
+                content:
+                   '失败的结果（'+post_error_arr.length+'）:'+post_error_arr+'<br>'+
+                   '出现的异常记录：'+yichang,
+                yes: function(index, layero){
+                    setTimeout("window.location.reload()",1000);
+                }
+            });
+        }
+	    if( cache_arr.length>0)
+	    {
+	        var ArgItem = cache_arr[0];
+	        post_del_cache(ArgItem[0],ArgItem[1],ArgItem[2],ArgItem[3],ArgItem[4]);
+	    }
+	}
+
+
+	var post_error_arr=[];
+	var yichang=[];
+    function post_del_cache(y_page_url,crc32,tf_block,content,yuan_ip){
+	    var str1 = y_page_url;
+        var reg1 = /[^\/]*\/[^\/]*\/[^\/]*\//;
+        str1 = str1.replace(reg1, "c_cache/");
+        var str2 = y_page_url;
+        var reg2 =  /^[^\/]*\/[^\/]*\/[^\/]*\//;
+        str2 = str2.match(reg2)[0];
+        var cache_url=str2+str1;
+	    $.ajax({
+            type:'GET',
+            url:'http://api.shawdo.com/api/admin/public/dataUpdate',
+            dataType:'json',
+            data:{url:y_page_url,crc32:crc32,bid:tf_block,bcontent:content,ip:yuan_ip},
+            success:function(data){
+                //删除CDN缓存
+                $.ajax({
+                    type:'GET',
+                    url:'http://api.shawdo.com/api/admin/public/delJsonCache',
+                    dataType:'json',
+                    data:{url:y_page_url,crc32:crc32,ip:yuan_ip},
+                    success:function(data1){
+                        if(data1.errorCode==200){
+                            var index=layer.open({
+                                shadeClose:true,
+                                type: 2,
+                                content: cache_url,
+                            });
+                            layer.close(index);
+                            cache_arr.shift();  //移除已完成请求
+                            Execachearr();//执行队列请求
+                        }else if(data1.errorCode==0){
+                            yichang.push(y_page_url+"删除json缓存失败");
+                            post_error_arr.push(y_page_url);
+                            cache_arr.shift();  //移除已完成请求
+                            Execachearr();//执行队列请求
+                        }
+                    },error:function(jqXHR){
+                        yichang.push(y_page_url+"删除json缓存请求失败");
+                        post_error_arr.push(y_page_url);
+                        cache_arr.shift();  //移除已完成请求
+                        Execachearr();//执行队列请求
+                    }
+                });
+                //删除CDN缓存end
+            },error:function(jqXHR){
+                yichang.push(y_page_url+"数据更新请求失败");
+                post_error_arr.push(y_page_url);
+                cache_arr.shift();  //移除已完成请求
+                Execachearr();//执行队列请求
+            }
+        });
+    }
+
+    function sprintf()
+    {
+      var arg = arguments,
+        str = arg[0] || '',
+        i, n;
+      for (i = 1, n = arg.length; i < n; i++) {
+        str = str.replace(/%u/, arg[i]);
+      }
+      return str;
+    }
+
+
+
+    layui.use('table', function(){
+        var table = layui.table;
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/olink_olist',
+            where: {
+                y_webcf_id: {{ y_webcf_id }}
+            },
+            page: true,
+            cols: [[ //表头
+                {field: 'y_page_url', title: '被投放页面',sort: true, fixed: 'left'},
+                {field: 'tf_url', title: '投放链接',sort: true, fixed: 'left'},
+                {field: 'tf_key', title: '关键词',sort: true, fixed: 'left'},
+                {field: 'tf_ip', title: '内链IP',sort: true, fixed: 'left'},
+                {field: 'tf_page', title: '投放页面',sort: true, fixed: 'left'},
+                {field: 'tf_block', title: '投放区域',sort: true, fixed: 'left'},
+                {fixed: 'right', title:"添加时间", width:200, align:'center', templet: function(d){return '<span>'+timer(d.addtime)+'</span>'}},
+                {fixed: 'right', title:"操作", width:200, align:'center', toolbar: '#barDemo'},
+            ]]
+        });
+        //监听工具条
+        table.on('tool(demo)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                $.ajax({
+                    type:'POST',
+                    url:'/del_olink',
+                    dataType:'json',
+                    data:{id:data.id},
+                    success:function(data){
+                        if(data.msg=="ok"){
+                            layer.msg("删除成功");
+                            setTimeout("window.location.reload()",1000);
+                        }else{
+                            layer.msg("删除失败");
+                            setTimeout("window.location.reload()",1000);
+                        }
+                    }
+                });
+            }
+        });
+
+        function timer(id){
+            var date = new Date(id * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+            var Y = date.getFullYear() + '-';
+            var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+            var D = date.getDate() + ' ';
+            var h = date.getHours() + ':';
+            var m = date.getMinutes() + ':';
+            var s = date.getSeconds();
+            return Y+M+D+h+m+s;
+        }
+    });
+</script>

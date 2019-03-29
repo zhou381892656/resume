@@ -1,0 +1,152 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                网站异常情况：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <a href="{{ web_url }}" style="margin-right: 20px" target="_blank">{{ api_table_name }}</a><button class="layui-btn layui-btn-danger" id="test">检测</button>
+                        <a href="/batch-edit/{{ api_table_name }}" class="layui-btn layui-btn-normal">内页列表</a>
+                    </div>
+                    <p style="color:red">如果部分(所有则检测是否部署block)页面出现未收录的情况，请访问一次该网站的对应的页面，然后点击检测，如果结果提示异常，则检查对应页面的模版标签是否部署。点击检测结果提示通过之后，请关闭监控之后再重新开启，由于监控需要时间，请耐心等待，两小时内必定生效。非上述情况请联系管理员。</p>
+                </div>
+            </div>
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form','table'], function(){
+        var table = layui.table;
+        var form = layui.form;
+        form.on('switch(on_close)', function(data){
+             var web_id={{ param }};
+             console.log(data.elem.checked); //开关是否开启，true或者false
+             if(data.elem.checked){
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_404_status',
+                    dataType: 'json',
+                    data:{jk404_status:1,web_id:{{ param }}},
+                    success: function (data) {
+                        var web_domain=data.data[0]['api_table_name'];
+                        web_domain=web_domain.replace(/\./g,"_");
+                        $.ajax({
+                            type: 'POST',
+                            url: 'http://api.shawdo.com/api/admin/public/add_web_list',
+                            dataType: 'json',
+                            data:{webcf_id:{{ param }},act:"add",zttime:"1548401671",type:7,web_domain:web_domain,time_cycle:7200},
+                            success: function (data1) {
+                                layer.msg(data1.msg);
+                            }
+                        });
+                    }
+                });
+             }else{
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_404_status',
+                    dataType: 'json',
+                    data:{jk404_status:0,web_id:{{ param }}},
+                    success: function (data) {
+                        var web_domain=data.data[0]['api_table_name'];
+                        web_domain=web_domain.replace(/\./g,"_");
+                        $.ajax({
+                            type: 'POST',
+                            url: 'http://api.shawdo.com/api/admin/public/add_web_list',
+                            dataType: 'json',
+                            data:{webcf_id:{{ param }},act:"del",zttime:"1548401671",type:7,web_domain:web_domain,time_cycle:7200},
+                            success: function (data1) {
+                                layer.msg(data1.msg);
+                            }
+                        });
+                    }
+                });
+             }
+         });
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/web_status',
+            page: true,
+            where: {
+                web_id:{{ param }}
+            },
+            cols: [[ //表头
+                {type:'checkbox', fixed: 'left'},
+                {field: 'index_status', title: '首页状态',sort: true, fixed: 'left'},
+                {field: 'column_status', title: '栏目页状态',sort: true, fixed: 'left'},
+                {field: 'content_status', title: '内容页状态',sort: true, fixed: 'left'},
+                {fixed: 'right', title:"是否开启监控", align:'center', templet: function(d){
+                    if(d.jk404_status==0){
+                        return '<div class="layui-form-item">\n' +
+                        '    <div class="demoTable">\n' +
+                        '      <input type="checkbox" class="layui-btn" lay-skin="switch" lay-text="ON|OFF"  lay-filter="on_close"  data-type="on_close" lay-param="{{ param }}">\n' +
+                        '    </div>\n' +
+                        '  </div>';
+                    }else if(d.jk404_status==1){
+                        return '<div class="layui-form-item">\n' +
+                        '    <div class="demoTable">\n' +
+                        '      <input type="checkbox" class="layui-btn" lay-skin="switch" lay-text="ON|OFF"  lay-filter="on_close" checked  data-type="on_close" lay-param="{{ param }}">\n' +
+                        '    </div>\n' +
+                        '  </div>';
+                    }
+                    }},
+                {fixed: 'right', title:"检测时间", width:200, align:'center', templet: function(d){return '<span>'+timer(d.update_time)+'</span>'}},
+            ]]
+        });
+    });
+
+
+
+    function timer(id){
+        var date = new Date(id * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        var h = date.getHours() + ':';
+        var m = date.getMinutes() + ':';
+        var s = date.getSeconds();
+        return Y+M+D+h+m+s;
+    }
+
+
+    function del_url(url){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/del_web',
+            dataType:'json',
+            data:{url:url},
+            success:function(data){
+                layer.msg(data.msg);
+            }
+        });
+    }
+
+
+    $("#test").click(function () {
+        var api_table_name="{{ api_table_name }}";
+        var table_name=api_table_name.replace(/\./g,"_");
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/yz_block',
+            dataType:'json',
+            data:{table_name:table_name},
+            success:function(data){
+                layer.msg(data.msg);
+            }
+        });
+    });
+
+
+</script>

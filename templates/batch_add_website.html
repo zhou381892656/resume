@@ -1,0 +1,597 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                站点信息：
+            </blockquote>
+            <span class="layui-breadcrumb layui-nav" lay-separator="|">
+                <a href="/add_website_page" style="color:deepskyblue"><span style="color:deepskyblue">新增单个站点</span></a>
+                <a href="/batch_add_website_page"><span style="color:deepskyblue">批量新增站点</span></a>
+            </span>
+            <div class="layui-form-item">
+                <div class="layui-inline layui-form-text">
+                    <label class="layui-form-label">域名</label>
+                    <div class="layui-input-block">
+{#                        <textarea placeholder="多个根域名换行隔开" class="layui-textarea" id="host_name" onchange="add_host_name_arr()"></textarea>#}
+                        <textarea placeholder="多个根域名换行隔开" class="layui-textarea" id="host_name"></textarea>
+                    </div>
+                    <div class="layui-form-mid" style="color:red">根域名示例：baidu.com  建站（必填）若域名格式有问题则不能提交。注意最后一个域名之后不能带有换行，否则最后界面会一直加载，因为换行也算作一个空数据。</div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">源服务器</label>
+                <div class="layui-input-inline">
+                    <select id="yuan_ip">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">CDN服务器</label>
+                <div class="layui-input-inline">
+                    <select id="docker_ip">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">负载均衡</label>
+                <div class="layui-input-inline">
+                    <select id="load_balance">
+
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">建站（必选）</div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">建站程序</label>
+                <div class="layui-input-inline">
+                    <select id="cms">
+                        <option value="likezu.zip">李可组</option>
+                        <option value="yun1.zip">孕1</option>
+                        <option value="yun2.zip">孕2</option>
+                        <option value="yun105.zip">孕105</option>
+                        <option value="yun106.zip">孕106</option>
+                        <option value="yun107.zip">孕107</option>
+                        <option value="xiaoshuozhan.zip">小说站</option>
+                        <option value="ziyuanzhan.zip">资源站</option>
+                        <option value="ziyuanzhan1.zip">资源站1</option>
+                        <option value="ziyuanzhan2.zip">资源站2</option>
+                        <option value="ziyuanzhan3.zip">资源站3</option>
+                        <option value="ziyuanzhan4.zip">资源站4</option>
+                        <option value="ziyuanzhan5.zip">资源站5</option>
+                        <option value="ziyuanzhan6.zip">资源站6</option>
+                        <option value="wdede57.zip">wdede57</option>
+                    </select>
+                </div>
+                <div class="layui-form-mid" style="color:red">选择建站程序包</div>
+            </div>
+            <hr class="layui-bg-green">
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否包含</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" id="www" title="域名包含www">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否包含</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" id="m" title="域名包含m端">
+                </div>
+
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <button class="layui-btn layui-btn-radius" id="ok">添加站点</button>
+            </div>
+            <div class="layui-footer">
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    var loading="";
+    layui.use(['form'], function() {
+        var form = layui.form;
+        $.ajax({
+            type: 'POST',
+            url: '/server_ip_data',
+            dataType: 'json',
+            data:{server_type:1,msg_type:"cdn"},
+            success: function (data) {
+                console.log(data);
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['server_ip'] + "</option>";
+                }
+                $("#docker_ip").html(str);
+                form.render();
+            }
+        });
+
+       $.ajax({
+            type: 'POST',
+            url: '/server_ip_data',
+            dataType: 'json',
+            data:{server_type:1,msg_type:"yuan"},
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['server_ip'] + "</option>";
+                }
+                $("#yuan_ip").html(str);
+                form.render();
+            }
+        });
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/server_avg_data',
+            dataType: 'json',
+            success: function (data) {
+                var str = "";
+                for (var key in data) {
+                    str += "<option value=\"" + data[key]['id'] + "\">" + data[key]['load_ip'] + "</option>";
+                }
+                $("#load_balance").html(str);
+                form.render();
+            }
+        });
+
+    });
+
+
+
+
+
+    //验证队列
+    var yz_host_name_arr=[];
+    //加入请求队列
+	function yz_queue(url)
+	{
+        var Item = [];
+        Item[0]=url;
+        yz_host_name_arr.push(Item);
+        if(yz_host_name_arr.length==1)
+        {
+            Exeyzhostnamearr();
+        }
+	}
+
+	//执行队列里的顺序第一个的请求
+	function Exeyzhostnamearr()
+	{
+        if(yz_host_name_arr.length==0){
+            layer.close(loading);
+            if(yz_post_error_arr.length > 0){
+                layer.open({
+                    title: '格式有误的域名',
+                    shadeClose:true,
+                    content:
+                       '域名格式错误（'+yz_post_error_arr.length+'）:'+yz_post_error_arr,
+                    end: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }
+        }
+	    if( yz_host_name_arr.length>0)
+	    {
+	        var ArgItem = yz_host_name_arr[0];
+	        yz_post_host_name(ArgItem[0]);
+	    }
+	}
+
+
+	var yz_post_error_arr=[];
+
+
+
+	function yz_post_host_name(){
+	    yz_host_name_arr.shift();
+	    Exeyzhostnamearr();
+    }
+
+    function add_host_name_arr(){
+        var url_str = $("#host_name").val();
+        var url_arr = url_str.split('\n');
+        for(var i=0;i<url_arr.length;i++){
+            var url=url_arr[i]+"";
+            url = url.replace(/\s+/g,"");
+            var myreg="(\\w*://)?((\\w*\\-)*\\w*\\.(com.cn|com|net.cn|net|org.cn|name|org|gov.cn|gov|cn|com.hk|mobi|me|info|name|biz|cc|tv|asia|hk|网络|公司|中国|ac.cn|bj.cn|sh.cn|tj.cn|cq.cn|he.cn|sx.cn|nm.cn|ln.cn|jl.cn|hl.cn|js.cn|zj.cn|ah.cn|fj.cn|jx.cn|sd.cn|ha.cn|hb.cn|hn.cn|gd.cn|gx.cn|hi.cn|sc.cn|gz.cn|yn.cn|xz.cn|sn.cn|gs.cn|qh.cn|nx.cn|xj.cn|tw.cn|hk.cn|mo.cn|travel|tw|com.tw|la|sh|ac|io|ws|us|tm|vc|ag|bz|in|mn|me|sc|co|org.tw|jobs|tel)).*$";
+            var reg=new RegExp("(\\w*://)?((\\w*\\-)*\\w*\\.(com.cn|com|net.cn|net|org.cn|name|org|gov.cn|gov|cn|com.hk|mobi|me|info|name|biz|cc|tv|asia|hk|网络|公司|中国|ac.cn|bj.cn|sh.cn|tj.cn|cq.cn|he.cn|sx.cn|nm.cn|ln.cn|jl.cn|hl.cn|js.cn|zj.cn|ah.cn|fj.cn|jx.cn|sd.cn|ha.cn|hb.cn|hn.cn|gd.cn|gx.cn|hi.cn|sc.cn|gz.cn|yn.cn|xz.cn|sn.cn|gs.cn|qh.cn|nx.cn|xj.cn|tw.cn|hk.cn|mo.cn|travel|tw|com.tw|la|sh|ac|io|ws|us|tm|vc|ag|bz|in|mn|me|sc|co|org.tw|jobs|tel)).*$");
+            if(reg.test(url)){
+                yz_queue(url.match(myreg)[2]);
+                queue(url.match(myreg)[2]);
+                console.log(host_name_arr);
+            }else{
+                yz_post_error_arr.push(url);
+                post_error_arr.push(url);
+                Exeyzhostnamearr();
+            }
+        }
+    }
+
+
+
+    //验证队列
+     var host_name_arr=[];
+	 var arraySuccess=[];
+	 var cont ;
+	 var con = [];
+	 var  view;
+    //加入请求队列
+	function queue(url)
+	{
+        var Item = [];
+        Item[0]=url;
+        host_name_arr.push(Item);
+        if(host_name_arr.length==1)
+        {
+            Exehostnamearr();
+        }
+
+	}
+
+	//执行队列里的顺序第一个的请求
+	function Exehostnamearr()
+	{
+        if(host_name_arr.length==0){
+                        // console.log(arraySuccess);
+             layer.close(loading);
+            // layer.msg("写入成功");
+                    for(var i=0;i<arraySuccess.length;i++){
+                        cont=JSON.parse(arraySuccess[i])
+                    }
+
+                    con.push(cont);
+                    //console.log(con);
+                    view = '';
+                    for(var i=0;i<con.length;i++){
+                        var str=con[i]['web']['domain'];
+                        str=str.replace(/^www\./,"");
+                        str=str.replace(/^m\./,"");
+                        str=str.replace(/\./g,"_");
+                        str="db_"+str;
+                        //大写强转小写
+                        str=str.toLowerCase();
+                        var user=str.substring(0,16);
+                        user=user.replace(/-/g,"");
+                        user=user.toLowerCase();
+                        var myreg=new RegExp("_$");
+                        if(myreg.test(user)){
+                            user=user.substring(0,15);
+                        }
+                        view += 'http://'+con[i].web['domain']+'/install/index.php?step=3&value1=sz1-nei.rds.kuadu.net&value2='+user+'&value3=qqqAAA0130&value4='+str+'<br/>'
+                    }
+                    console.log(view);
+
+                     //arraySuccess  = JSON.parse(arraySuccess)
+                     layer.open({
+                    title: '已添加',
+                     area:['1000px','500px'],
+                    shadeClose:true,
+                    content:
+                    view,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+
+            //layer.close(loading);
+           //layer.msg("写入成功");
+            if(post_error_arr.length > 0){
+                layer.open({
+                    title: '数据库中已存在的域名',
+                    shadeClose:true,
+                    content:
+                       '数据库中已存在的域名（'+post_error_arr.length+'）:'+post_error_arr+'<br>'+view,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }
+        }
+	    if( host_name_arr.length>0)
+	    {
+	        var ArgItem = host_name_arr[0];
+	        post_host_name(ArgItem[0]);
+	    }
+	}
+
+
+	var post_error_arr=[];
+
+
+    $("#ok").click(function () {
+        loading=layer.load(1, {shade: [0.8, '#393D49']});
+        var url_str = $("#host_name").val();
+        var url_arr = url_str.split('\n');
+        for(var i=0;i<url_arr.length;i++){
+            var url=url_arr[i]+"";
+            url = url.replace(/\s+/g,"");
+            var myreg="(\\w*://)?((\\w*\\-)*\\w*\\.(com.cn|com|net.cn|net|org.cn|name|org|gov.cn|gov|cn|com.hk|mobi|me|info|name|biz|cc|tv|asia|hk|网络|公司|中国|ac.cn|bj.cn|sh.cn|tj.cn|cq.cn|he.cn|sx.cn|nm.cn|ln.cn|jl.cn|hl.cn|js.cn|zj.cn|ah.cn|fj.cn|jx.cn|sd.cn|ha.cn|hb.cn|hn.cn|gd.cn|gx.cn|hi.cn|sc.cn|gz.cn|yn.cn|xz.cn|sn.cn|gs.cn|qh.cn|nx.cn|xj.cn|tw.cn|hk.cn|mo.cn|travel|tw|com.tw|la|sh|ac|io|ws|us|tm|vc|ag|bz|in|mn|me|sc|co|org.tw|jobs|tel)).*$";
+            var reg=new RegExp("(\\w*://)?((\\w*\\-)*\\w*\\.(com.cn|com|net.cn|net|org.cn|name|org|gov.cn|gov|cn|com.hk|mobi|me|info|name|biz|cc|tv|asia|hk|网络|公司|中国|ac.cn|bj.cn|sh.cn|tj.cn|cq.cn|he.cn|sx.cn|nm.cn|ln.cn|jl.cn|hl.cn|js.cn|zj.cn|ah.cn|fj.cn|jx.cn|sd.cn|ha.cn|hb.cn|hn.cn|gd.cn|gx.cn|hi.cn|sc.cn|gz.cn|yn.cn|xz.cn|sn.cn|gs.cn|qh.cn|nx.cn|xj.cn|tw.cn|hk.cn|mo.cn|travel|tw|com.tw|la|sh|ac|io|ws|us|tm|vc|ag|bz|in|mn|me|sc|co|org.tw|jobs|tel)).*$");
+            if(reg.test(url)){
+                queue(url.match(myreg)[2]);
+            }else{
+                post_error_arr.push(url+"格式有误");
+            }
+        }
+    });
+
+
+
+    function post_host_name(host_name){
+        var api_table_name=host_name;
+        var other_name=host_name;
+        var web_url="http://"+host_name+"/";
+        if($('#www').prop('checked')){
+            api_table_name="www."+host_name;
+            other_name=api_table_name;
+            web_url="http://"+api_table_name+"/";
+        }
+        if($('#m').prop('checked')){
+            var m_api_table_name="m."+host_name;
+            var m_url="http://"+m_api_table_name+"/";
+            other_name=api_table_name+","+m_api_table_name;
+            $.ajax({
+                type:'POST',
+                url:'/batch_add_website',
+                dataType:'json',
+                async:false,
+                data:{api_table_name:m_api_table_name,yuan_ip:$("#yuan_ip").find("option:selected").text(),web_url:web_url,m_url:m_url,docker_ip:$("#docker_ip").find("option:selected").text(),load_balance:$("#load_balance").find("option:selected").text(),other_name:other_name,server_rds_id:$("#db_type").val(),server_avg_id:$("#load_balance").val(),server_yuan_id:$("#yuan_ip").val(),server_cdn_id:$("#docker_ip").val()},
+                success:function(data){
+                    if(data.msg=="success"){
+                        if(window.location.hostname=="api-dg.snsnb.com") {
+                            setTimeout(m_table(m_api_table_name), "3000");
+                        }
+                    }else if(data.msg=="have"){
+                        post_error_arr.push(m_api_table_name);
+                        return;
+                    }
+
+                }
+            });
+        }else{
+            var m_url="";
+        }
+        if(window.location.hostname=="api-dg.snsnb.com") {
+            setTimeout(w_table(api_table_name), "3000");
+        }
+        $.ajax({
+            type:'POST',
+            url:'/batch_add_website',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:api_table_name,yuan_ip:$("#yuan_ip").find("option:selected").text(),web_url:web_url,m_url:m_url,docker_ip:$("#docker_ip").find("option:selected").text(),load_balance:$("#load_balance").find("option:selected").text(),other_name:other_name,server_rds_id:$("#db_type").val(),server_avg_id:$("#load_balance").val(),server_yuan_id:$("#yuan_ip").val(),server_cdn_id:$("#docker_ip").val()},
+            success:function(data){
+                if(data.msg=="success"){
+                    $.ajax({
+                        type:'POST',
+                        url:"/save_cdn_group",
+                        dataType:'json',
+                        async:false,
+                        data:{web_id:data.web_id,docker_ip:$("#docker_ip").find("option:selected").text()},
+                        success:function(data1){
+
+                            if(data1.msg=="ok"){
+                                $.ajax({
+                                    type:'POST',
+                                    url:"/push_cdn_group",
+                                    dataType:'json',
+                                    async:false,
+                                    data:{web_id:data.web_id,num:data1.num},
+                                    success:function(data_cdn){
+                                        if(data_cdn.msg=="ok"){
+                                            var res_data=data_cdn.data;
+                                            var idc_ip=data_cdn.idc_ip;
+                                            var web_arr=[];
+                                            for(var key in res_data){
+                                                var other_name=res_data[key]['other_name'];
+                                                var other=other_name.split(',');
+                                                var web={
+                                                    domain:res_data[key]['api_table_name'],
+                                                    yuan_ip:res_data[key]['load_balance'],
+                                                    other_domain:other
+                                                };
+                                                web_arr.push(web);
+                                            }
+                                            var post_data={
+                                                    pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,
+                                                    web:web_arr
+                                                };
+                                            var json=JSON.stringify(post_data);
+                                            var type=4;
+                                            if(window.location.hostname=="api-dg.snsnb.com") {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                                    dataType: 'json',
+                                                    async: false,
+                                                    data: {data: json, type: type, idc_ip: idc_ip},
+                                                    success: function (data_sc) {
+
+                                                    }, error: function (jqXHR) {
+                                                        host_name_arr.shift();
+                                                        post_error_arr.push(api_table_name + "shawdo_cdn=请求失败");
+                                                        Exehostnamearr();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    },error:function(jqXHR){
+                                        host_name_arr.shift();
+                                        post_error_arr.push(api_table_name+"push_cdn_group请求失败");
+                                        Exehostnamearr();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    $.ajax({
+                        type:'POST',
+                        url:"/save_yuan_group",
+                        dataType:'json',
+                        async:false,
+                        data:{web_id:data.web_id,yuan_ip:$("#yuan_ip").find("option:selected").text()},
+                        success:function(data2){
+                            if(data2.msg=="ok"){
+                                $.ajax({
+                                    type:'POST',
+                                    url:"/push_yuan_group",
+                                    dataType:'json',
+                                    async:false,
+                                    data:{web_id:data.web_id,num:data2.num},
+                                    success:function(data_yuan){
+                                        if(data_yuan.msg=="ok"){
+                                            var res_data=data_yuan.data;
+                                            var idc_ip=data_yuan.idc_ip;
+                                            var web_arr=[];
+                                            for(var key in res_data){
+                                                var other_name1=res_data[key]['other_name'];
+                                                var other1=other_name1.split(',');
+                                                var web={
+                                                    domain:res_data[key]['api_table_name'],
+                                                    other_domain:other1
+                                                };
+                                                web_arr.push(web);
+                                            }
+                                            var post_data={
+                                                    pod:"web"+data_yuan.pod_name+"-"+data_yuan.num,
+                                                    web:web_arr
+                                                };
+                                            var json=JSON.stringify(post_data);
+                                            {#console.log(json);#}
+                                            var type=3;
+                                            if(window.location.hostname=="api-dg.snsnb.com") {
+                                                $.ajax({
+                                                    type: 'POST',
+                                                    url: 'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                                    dataType: 'json',
+                                                    async: false,
+                                                    data: {data: json, type: type, idc_ip: idc_ip},
+                                                    success: function (data_sy) {
+
+                                                    }, error: function (jqXHR) {
+                                                        host_name_arr.shift();
+                                                        post_error_arr.push(api_table_name + "shawdo_yuan请求失败");
+                                                        Exehostnamearr();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    },error:function(jqXHR){
+                                        host_name_arr.shift();
+                                        post_error_arr.push(api_table_name+"push_yuan_group请求失败");
+                                        Exehostnamearr();
+                                    }
+                                });
+                            }
+                            //建站程序
+                            $.ajax({
+                                type:'POST',
+                                url:"/add_cms",
+                                dataType:'json',
+                                async:false,
+                                data:{web_id:data.web_id, cms_url:$("#cms").val()},
+                                success:function(data_cms){
+                                    if(data_cms.msg=="ok"){
+                                        var res_data=data_cms.data;
+                                        var web={
+                                            domain:res_data[0]['api_table_name'],
+                                            url:res_data[0]['cms_url']
+                                        };
+                                        var post_data={
+                                                pod:"web"+data_cms.pod_name+"-10",
+                                                web:web
+                                            };
+                                        var json=JSON.stringify(post_data);
+                                        console.log(json);
+                                        arraySuccess.push(json)
+                                        var type=6;
+                                        if(window.location.hostname=="api-dg.snsnb.com") {
+                                            $.ajax({
+                                                type: 'POST',
+                                                url: 'http://api.shawdo.com/api/admin/public/saveDjingo',
+                                                dataType: 'json',
+                                                async: false,
+                                                data: {data: json, type: type, idc_ip: $("#yuan_ip").find("option:selected").text()},
+                                                success: function (data_sm) {
+                                                    if (data_sm.code == 1) {
+                                                        host_name_arr.shift();
+                                                        Exehostnamearr();
+                                                    } else {
+                                                        host_name_arr.shift();
+                                                        post_error_arr.push(api_table_name + "cms添加失败");
+                                                        Exehostnamearr();
+                                                    }
+
+                                                }, error: function (jqXHR) {
+                                                    host_name_arr.shift();
+                                                    post_error_arr.push(api_table_name + "cms程序请求失败");
+                                                    Exehostnamearr();
+                                                }
+                                            });
+                                        }
+                                    }else{
+                                        host_name_arr.shift();
+                                        post_error_arr.push(api_table_name+"不存在");
+                                        Exehostnamearr();
+                                    }
+                                },error:function(jqXHR){
+                                    host_name_arr.shift();
+                                    post_error_arr.push(api_table_name+"add_cms请求失败");
+                                    Exehostnamearr();
+                                }
+                            });
+
+
+                        }
+                    });
+                }else if(data.msg=="have"){
+                    host_name_arr.shift();
+                    post_error_arr.push(api_table_name+"已存在");
+                    Exehostnamearr();
+                }
+            }
+        });
+    }
+
+
+    function m_table(m_url){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/create_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:m_url},
+            success:function(data){
+                return;
+            }
+        });
+    }
+
+
+    function w_table(web_url){
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/create_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:web_url},
+            success:function(data){
+                return;
+            }
+        });
+    }
+
+
+
+</script>

@@ -1,0 +1,147 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <div class="layui-form">
+                <blockquote class="layui-elem-quote">
+                    采集管理：
+                </blockquote>
+                <div class="layui-inline">
+                    <a href="/add_item_page" class="layui-btn">新增</a>
+                </div>
+                <div class="layui-form-item">
+                <table id="demo" lay-filter="demo"></table>
+                <script type="text/html" id="barDemo">
+{#                    <a class="layui-btn layui-btn-xs" lay-event="start">开启</a>#}
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="up">更新数量</a>
+                </script>
+
+            </div>
+        </div>
+        <div class="layui-footer">
+
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+
+
+
+
+    layui.use('table', function(){
+        var table = layui.table;
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/item_list',
+            page: true,
+            cols: [[ //表头
+                {field: 'left', title: '项目名称',sort: true, fixed: 'left', templet: function(d){
+                    return"<a href='/article_list/"+d.pyspider_id+"'>"+d.projects_name+"</a>";
+
+                    }},
+                {field: 'collection_type', title: '爬取站点',sort: true, fixed: 'left'},
+                {field: 'collection_keywords', title: '采集关键词',sort: true, fixed: 'left'},
+                {fixed: 'add_time', title:"添加时间", width:200, align:'center', templet: function(d){return '<span>'+timer(d.add_time)+'</span>'}},
+                 {fixed: 'up_date', title:"更新时间", width:200, align:'center', templet: function(d){return '<span>'+timer(d.up_date)+'</span>'}},
+                {field: 'num', title: '数量',sort: true, fixed: 'left'},
+                {field: 'status', title: '状态',sort: true, fixed: 'left',templet: function(d){return '<span>'+status(d.status)+'</span>'}},
+                {fixed: 'right', title:"操作", width:200, align:'center', toolbar: '#barDemo'},
+            ]]
+        });
+        //监听工具条
+        table.on('tool(demo)', function(obj){
+            var data_list = obj.data;
+            if(obj.event === 'del'){
+                $.ajax({
+                    type:'POST',
+                    url:'http://120.79.150.193:5000/debug/delete_project',
+                    dataType:'json',
+                    data:{"item_id":data_list.pyspider_id},
+                    success:function(data){
+                        if(data.http_status == '200') {
+                            $.ajax({
+                                type:'POST',
+                                url:'/del_item',
+                                dataType:'json',
+                                data:{pyspider_id:data.id},
+                                success:function(data1){
+                                    if(data1.msg == 'ok') {
+                                        layer.msg("删除成功");
+                                        setTimeout("window.location.reload()", 1000);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }else if(obj.event === 'start'){
+                $.ajax({
+                    type:'POST',
+                    url:'http://120.79.150.193:5000/result_one_project',
+                    dataType:'json',
+                    data:{"item_id":data_list.pyspider_id},
+                    success:function(data){
+                        if(data.http_status == '200') {
+                            layer.msg("开启成功");
+                            setTimeout("window.location.reload()", 1000);
+                        }
+                    }
+                });
+            }else if(obj.event === 'up'){
+            var pyspider_id = data_list.pyspider_id;
+               $.ajax({
+                   // url:'http://120.79.150.193:5000/run_project',//爬虫接口
+                    url:'http://120.79.150.193:5000/result_one_project',
+                   //url:'http://localhost/index.php',
+                   // contentType:'application/json;',
+                    dataType:'json',
+                    type:'POST',
+                    data:{"id":data.pyspider_id},
+                    success:function(data){
+
+                        if(data.http_status == '200'){
+                            $.ajax({
+                                    type:'POST',
+                                    url:'/up_porject',
+                                    dataType:'json',
+                                    data:{"status":data.status,"num":data.num,"pyspider_id":pyspider_id},
+                                    success:function(data){
+                                        setTimeout("window.location.reload()",1000);
+                                    }
+                                });
+                        }
+
+                       // setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }
+        });
+
+    });
+
+
+    function timer(id){
+    if(!id){
+        return '';
+    }
+        var date = new Date(id * 1000);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        var h = date.getHours() + ':';
+        var m = date.getMinutes() + ':';
+        var s = date.getSeconds();
+        return Y+M+D+h+m+s;
+    }
+
+        function status(status){
+            return status;
+
+    }
+</script>

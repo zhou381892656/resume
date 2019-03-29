@@ -1,0 +1,500 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body layui-form layui-form-pane">
+            <blockquote class="layui-elem-quote">
+                POD管理：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="yuan_ip" placeholder="请输入yuan_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="pod_yuan">推送pod源站</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="yuan_pod_name" placeholder="请输入源站pod_name" class="layui-input">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" id="pod_yuan_ip" placeholder="请输入yuan_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="push_pod_yuan">推送pod源站</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="docker_ip" placeholder="请输入docker_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="pod_cdn">推送podCDN</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="cdn_pod_name" placeholder="请输入pod_name" class="layui-input">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" id="pod_docker_ip" placeholder="请输入docker_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="push_pod_cdn">推送podCDN</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="hostname" placeholder="请输入域名" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="del">删除相关表</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="cdn_pod_data" placeholder="请输入pod_name" class="layui-input">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" id="get_docker_ip" placeholder="请输入docker_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="get_cdn_data">获取CDN该pod下的的所有域名</button>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="yuan_pod_data" placeholder="请输入pod_name" class="layui-input">
+                    </div>
+                    <div class="layui-input-inline">
+                        <input type="text" id="get_yuan_ip" placeholder="请输入yuan_ip" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" id="get_yuan_data">获取源站该pod下的的所有域名</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+
+<script>
+    $("#get_cdn_data").click(function () {
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_cdn_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:$("#cdn_pod_data").val(),docker_ip:$("#get_docker_ip").val()},
+            success:function(data_cdn){
+                var str = "";
+                var data=data_cdn.data;
+                for(var key in data){
+                    str += data[key]['api_table_name']+"<br>";
+                }
+                layer.open({
+                    title: '创建结果',
+                    shadeClose:true,
+                    content:
+                       str,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }
+        });
+    });
+
+    $("#get_yuan_data").click(function () {
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_yuan_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:$("#yuan_pod_data").val(),yuan_ip:$("#get_yuan_ip").val()},
+            success:function(data_yuan){
+                var str = "";
+                var data=data_yuan.data;
+                for(var key in data){
+                    str += data[key]['api_table_name']+"<br>";
+                }
+                layer.open({
+                    title: '创建结果',
+                    shadeClose:true,
+                    content:
+                       str,
+                    yes: function(index, layero){
+                        setTimeout("window.location.reload()",1000);
+                    }
+                });
+            }
+        });
+    });
+
+    $("#push_pod_cdn").click(function () {
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_cdn_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:$("#cdn_pod_name").val(),docker_ip:$("#pod_docker_ip").val()},
+            success:function(data_cdn){
+                if(data_cdn.msg=="ok"){
+                    var res_data=data_cdn.data;
+                    var idc_ip=data_cdn.idc_ip;
+                    var web_arr=[];
+                    for(var key in res_data){
+                        var other_name=res_data[key]['other_name'];
+                        var other=other_name.split(',');
+                        var web={
+                            domain:res_data[key]['api_table_name'],
+                            yuan_ip:res_data[key]['load_balance'],
+                            other_domain:other
+                        };
+                        web_arr.push(web);
+                    }
+                    var post_data={
+                            pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,
+                            web:web_arr
+                        };
+                    var json=JSON.stringify(post_data);
+                    console.log(json);
+                    var type=4;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                        dataType:'json',
+                        async:false,
+                        data:{data:json,type:type,idc_ip:idc_ip},
+                        success:function(data2){
+                            layer.msg(data2.msg);
+                            SaveArray.shift();
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+
+    $("#push_pod_yuan").click(function () {
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_yuan_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:$("#yuan_pod_name").val(),yuan_ip:$("#pod_yuan_ip").val()},
+            success:function(data_yuan){
+                if(data_yuan.msg=="ok"){
+                    var res_data=data_yuan.data;
+                    var idc_ip=data_yuan.idc_ip;
+                    var web_arr=[];
+                    for(var key in res_data){
+                        var other_name1=res_data[key]['other_name'];
+                        var other1=other_name1.split(',');
+                        var web={
+                            domain:res_data[key]['api_table_name'],
+                            other_domain:other1
+                        };
+                        web_arr.push(web);
+                    }
+                    var post_data={
+                            pod:"web"+data_yuan.pod_name+"-"+data_yuan.num,
+                            web:web_arr
+                        };
+                    var json=JSON.stringify(post_data);
+                    console.log(json);
+                    var type=3;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                        dataType:'json',
+                        async:false,
+                        data:{data:json,type:type,idc_ip:idc_ip},
+                        success:function(data2){
+                            layer.msg(data2.msg);
+
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    //消息队列待请求数据
+    var SavecdnArray = [];
+    var SaveyuanArray=[];
+
+
+    $("#pod_yuan").click(function () {
+        var yuan_ip=$("#yuan_ip").val();
+        $.ajax({
+            type:'POST',
+            url:'yuan_ip_push_pod_name',
+            dataType:'json',
+            async:false,
+            data:{yuan_ip:yuan_ip},
+            success:function(data){
+                if(data.msg=="ok"){
+                    var data=data.data;
+                    for(var key in data){
+                        AddyuanSaveArray(data[key]['pod_name'],yuan_ip);
+                        console.log(data[key]['pod_name']);
+                    }
+                }else if(data.msg=="no"){
+                    layer.msg("IP不存在");
+                }
+            }
+        });
+    });
+
+
+    $("#pod_cdn").click(function () {
+        var docker_ip=$("#docker_ip").val();
+        $.ajax({
+            type:'POST',
+            url:'docker_ip_push_pod_name',
+            dataType:'json',
+            async:false,
+            data:{docker_ip:docker_ip},
+            success:function(data){
+                if(data.msg=="ok"){
+                    var data=data.data;
+                    for(var key in data){
+                        AddcdnSaveArray(data[key]['pod_name'],docker_ip);
+                        console.log(data[key]['pod_name']);
+                    }
+                }else if(data.msg=="no"){
+                    layer.msg("IP不存在");
+                }
+            }
+        });
+    });
+
+
+    $("#del").click(function () {
+        var hostname=$("#hostname").val();
+        var m_api_table_name=hostname;
+        m_api_table_name=m_api_table_name.replace(/^www./,"");
+        m_api_table_name="m."+m_api_table_name;
+        $.ajax({
+            type:'POST',
+            url:'/del_api_table_name',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:hostname,act:"web"},
+            success:function(data2){
+                if(data2.msg=="ok"){
+                    layer.msg("web端删除成功");
+                }
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url:'/del_api_table_name',
+            dataType:'json',
+            async:false,
+            data:{api_table_name:m_api_table_name,act:"m"},
+            success:function(data2){
+                if(data2.msg=="ok"){
+                    layer.msg("移动端删除成功");
+                }
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/del_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:hostname},
+            success:function(data){
+
+            }
+        });
+        $.ajax({
+            type:'POST',
+            url:'http://api.shawdo.com/api/admin/public/del_table',
+            dataType:'json',
+            async:false,
+            data:{table_name:m_api_table_name},
+            success:function(data){
+
+            }
+        });
+    });
+
+
+
+
+
+
+    //pod_cdn
+	function AddcdnSaveArray(pod_name,cdn_ip)
+	{
+	        var Item = [];
+	        Item[0]=pod_name;
+	        Item[1]=cdn_ip;
+	        SavecdnArray.push(Item);
+	        if(SavecdnArray.length==1)
+	        {
+	            ExecdnSaveArray();
+	        }
+	}
+
+
+	function ExecdnSaveArray()
+	{
+
+	    if( SavecdnArray.length>0)
+	    {
+	        var ArgItem = SavecdnArray[0];
+	        save_cdn_data(ArgItem[0],ArgItem[1]);
+	    }
+	}
+
+    function save_cdn_data(pod_name,cdn_ip){
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_cdn_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:pod_name,docker_ip:cdn_ip},
+            success:function(data_cdn){
+                if(data_cdn.msg=="ok"){
+                    var res_data=data_cdn.data;
+                    var idc_ip=data_cdn.idc_ip;
+                    var web_arr=[];
+                    for(var key in res_data){
+                        var other_name=res_data[key]['other_name'];
+                        var other=other_name.split(',');
+                        var web={
+                            domain:res_data[key]['api_table_name'],
+                            yuan_ip:res_data[key]['load_balance'],
+                            other_domain:other
+                        };
+                        web_arr.push(web);
+                    }
+                    var post_data={
+                            pod:"web"+data_cdn.pod_name+"-"+data_cdn.num,
+                            web:web_arr
+                        };
+                    var json=JSON.stringify(post_data);
+                    var type=4;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                        dataType:'json',
+                        async:false,
+                        data:{data:json,type:type,idc_ip:idc_ip},
+                        success:function(data2){
+                            layer.msg(data2.msg);
+                            SavecdnArray.shift();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+
+
+    //pod_yuan
+	function AddyuanSaveArray(pod_name,yuan_ip)
+	{
+	        var Item = [];
+	        Item[0]=pod_name;
+	        Item[1]=yuan_ip;
+	        SaveyuanArray.push(Item);
+	        if(SaveyuanArray.length==1)
+	        {
+	            ExeyuanSaveArray();
+	        }
+	}
+
+	function ExeyuanSaveArray()
+	{
+
+	    if( SaveyuanArray.length>0)
+	    {
+	        var ArgItem = SaveyuanArray[0];
+	        save_yuan_data(ArgItem[0],ArgItem[1]);
+	    }
+	}
+
+    function save_yuan_data(pod_name,yuan_ip){
+        $.ajax({
+            type:'POST',
+            url:"/push_pod_yuan_group",
+            dataType:'json',
+            async:false,
+            data:{pod_name:pod_name,yuan_ip:yuan_ip},
+            success:function(data_yuan){
+                if(data_yuan.msg=="ok"){
+                    var res_data=data_yuan.data;
+                    var idc_ip=data_yuan.idc_ip;
+                    var web_arr=[];
+                    for(var key in res_data){
+                        var other_name1=res_data[key]['other_name'];
+                        var other1=other_name1.split(',');
+                        var web={
+                            domain:res_data[key]['api_table_name'],
+                            other_domain:other1
+                        };
+                        web_arr.push(web);
+                    }
+                    var post_data={
+                            pod:"web"+data_yuan.pod_name+"-"+data_yuan.num,
+                            web:web_arr
+                        };
+                    var json=JSON.stringify(post_data);
+                    console.log(json);
+                    var type=3;
+                    $.ajax({
+                        type:'POST',
+                        url:'http://api.shawdo.com/api/admin/public/saveDjingo',
+                        dataType:'json',
+                        async:false,
+                        data:{data:json,type:type,idc_ip:idc_ip},
+                        success:function(data2){
+                            layer.msg(data2.msg);
+                            SaveyuanArray.shift();
+
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+
+</script>

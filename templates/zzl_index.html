@@ -1,0 +1,69 @@
+{% include 'public/head.html' %}
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        {% include 'public/header.html' %}
+        {% include 'public/left.html' %}
+        <div class="layui-body layui-tab-content site-demo site-demo-body">
+            <blockquote class="layui-elem-quote">
+                任务列表：
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" id="link_url" placeholder="请输入URL" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <div class="demoTable">
+                        <button class="layui-btn" data-type="reload" id="search">查询</button>
+                    </div>
+                </div>
+            </div>
+            <table id="demo" lay-filter="demo"></table>
+        </div>
+    </div>
+</body>
+{% include 'public/foot.html' %}
+<script>
+    layui.use(['form','table'], function(){
+         var table = layui.table;
+         var form = layui.form;
+         var $ = layui.$, active = {
+            reload: function(){ //获取选中数据
+                table.reload('url_list', {
+                    url: '/zzl_search_task',
+                    method: 'POST',
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        url:$("#link_url").val()
+                    }
+                });
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+
+        //第一个实例
+        table.render({
+            elem: '#demo',
+            method: 'post',
+            url: '/zzl_task_list',
+            page: true,
+            id:'url_list',
+            cols: [[ //表头
+                {field: 'url', title: 'URL',sort: true, fixed: 'left'},
+                {field: 'status', title: '完成状态',sort: true, fixed: 'left'},
+                {field: 'article_origin', title: '文章来源',sort: true, fixed: 'left'},
+                {field: 'cat_id', title: '文章分类ID',sort: true, fixed: 'left'},
+                {field: 'publish_nums', title: '发布数量',sort: true, fixed: 'left'},
+                {field: 'interval', title: '时间间隔',sort: true, fixed: 'left'},
+            ]]
+        });
+    });
+</script>
